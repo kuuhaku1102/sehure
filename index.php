@@ -15,7 +15,7 @@ $prefectures = get_prefectures();
     <h2 class="section-title">都道府県から探す</h2>
     <div class="prefecture-grid">
       <?php foreach($prefectures as $slug => $name): ?>
-        <a href="<?php echo esc_url(home_url('/' . $slug . '/')); ?>" class="prefecture-card">
+        <a href="<?php echo esc_url(home_url('/' . $slug . '.php')); ?>" class="prefecture-card">
           <span class="prefecture-name"><?php echo esc_html($name); ?></span>
           <span class="prefecture-arrow">→</span>
         </a>
