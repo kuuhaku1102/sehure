@@ -36,7 +36,7 @@ jobs:
           username: ${{ secrets.SSH_USER }}
           ssh_private_key: ${{ secrets.SSH_PRIVATE_KEY }}
           local_path: ./
-          remote_path: "public_html/everydayfitness.jp/wp-content/themes/kami-import-top-theme/"
+          remote_path: public_html/everydayfitness.jp/wp-content/themes/kami-import-top-theme
           sftp_only: true
           delete_remote_files: false
-          rsyncArgs: "--exclude='.git/' --exclude='.github/' --exclude='node_modules/' --exclude='.env' --exclude='.DS_Store'"
+          args: '-avz --exclude=.git --exclude=.github --exclude=node_modules --exclude=.env --exclude=.DS_Store'
