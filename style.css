@@ -1,0 +1,160 @@
+/*
+Theme Name: Kami Import Top Theme
+Theme URI: https://example.com/
+Author: InfinityDesign
+Description: Display wp_kami_import table on TOP page (front page) as a list.
+Version: 1.0
+Text Domain: kami-import-top-theme
+*/
+
+:root{
+  --bg:#f6f7fb;
+  --card:#fff;
+  --text:#111827;
+  --muted:#6b7280;
+  --border:#e5e7eb;
+  --shadow:0 8px 24px rgba(0,0,0,.06);
+  --radius:14px;
+}
+
+*{box-sizing:border-box;}
+body{
+  margin:0;
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,"Noto Sans JP","Hiragino Kaku Gothic ProN","Hiragino Sans",Meiryo,sans-serif;
+  background:var(--bg);
+  color:var(--text);
+}
+
+a{color:inherit; text-decoration:none;}
+a:hover{text-decoration:underline;}
+
+.kami-wrap{
+  max-width:1100px;
+  padding:28px 16px 48px;
+  margin:0 auto;
+}
+
+.kami-header{
+  display:flex;
+  align-items:flex-end;
+  justify-content:space-between;
+  gap:12px;
+  margin-bottom:16px;
+}
+
+.kami-title{
+  margin:0;
+  font-size:24px;
+  letter-spacing:.02em;
+}
+
+.kami-sub{
+  margin:0;
+  color:var(--muted);
+  font-size:13px;
+}
+
+.kami-grid{
+  display:grid;
+  grid-template-columns:repeat(1,minmax(0,1fr));
+  gap:14px;
+}
+
+@media (min-width: 700px){
+  .kami-grid{grid-template-columns:repeat(2,minmax(0,1fr));}
+}
+@media (min-width: 980px){
+  .kami-grid{grid-template-columns:repeat(3,minmax(0,1fr));}
+}
+
+.kami-card{
+  background:var(--card);
+  border:1px solid var(--border);
+  border-radius:var(--radius);
+  box-shadow:var(--shadow);
+  overflow:hidden;
+  display:flex;
+  flex-direction:column;
+  min-height:100%;
+}
+
+.kami-thumb{
+  width:100%;
+  aspect-ratio: 4 / 3;
+  object-fit:cover;
+  background:#f1f5f9;
+  display:block;
+}
+
+.kami-body{
+  padding:14px 14px 12px;
+  display:flex;
+  flex-direction:column;
+  gap:8px;
+  flex:1;
+}
+
+.kami-name{
+  margin:0;
+  font-size:17px;
+  line-height:1.25;
+}
+
+.kami-meta{
+  display:flex;
+  gap:8px;
+  flex-wrap:wrap;
+  color:var(--muted);
+  font-size:12px;
+}
+
+.kami-pill{
+  border:1px solid var(--border);
+  padding:3px 8px;
+  border-radius:999px;
+  background:#fafafa;
+}
+
+.kami-comment{
+  margin:0;
+  font-size:13px;
+  line-height:1.55;
+  color:#374151;
+  display:-webkit-box;
+  -webkit-line-clamp:3;
+  -webkit-box-orient:vertical;
+  overflow:hidden;
+}
+
+.kami-actions{
+  padding:12px 14px 14px;
+  border-top:1px solid var(--border);
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:10px;
+}
+
+.kami-btn{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  padding:8px 12px;
+  border-radius:10px;
+  border:1px solid var(--border);
+  background:#fff;
+  font-size:13px;
+  gap:8px;
+}
+
+.kami-btn:hover{
+  background:#f9fafb;
+  text-decoration:none;
+}
+
+.kami-footer{
+  margin-top:22px;
+  color:var(--muted);
+  font-size:12px;
+  text-align:center;
+}
