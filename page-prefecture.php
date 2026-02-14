@@ -135,29 +135,9 @@ $count = is_array($items) ? count($items) : 0;
     </div>
   </section>
 
-  <section class="related-prefectures">
-    <h2 class="section-title">他の都道府県から探す</h2>
-    <div class="prefecture-grid">
-      <?php 
-      // ランダムに6つの都道府県を表示
-      $random_prefs = array_rand($prefectures, min(6, count($prefectures)));
-      if (!is_array($random_prefs)) $random_prefs = array($random_prefs);
-      
-      foreach($random_prefs as $key): 
-        if ($key === $slug) continue; // 現在のページは除外
-        $other_slug = array_keys($prefectures)[$key];
-        $other_name = $prefectures[$other_slug];
-      ?>
-        <a href="<?php echo esc_url(home_url('/' . $other_slug . '/')); ?>" class="prefecture-card">
-          <span class="prefecture-name"><?php echo esc_html($other_name); ?></span>
-          <span class="prefecture-arrow">→</span>
-        </a>
-      <?php endforeach; ?>
-    </div>
-    <div class="back-to-top">
-      <a href="<?php echo esc_url(home_url('/')); ?>" class="btn-back">全都道府県を見る</a>
-    </div>
-  </section>
+  <div class="back-to-top">
+    <a href="<?php echo esc_url(home_url('/')); ?>" class="btn-back">トップページに戻る</a>
+  </div>
 
   <div class="sefure-footer-info">
     <?php echo esc_html(date_i18n('Y年n月j日')); ?> / <?php echo esc_html($pref_name); ?>のセフレ掲示板

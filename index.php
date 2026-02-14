@@ -4,8 +4,6 @@ if (!defined('ABSPATH')) { exit; }
 get_header();
 
 $prefectures = get_prefectures();
-$items = kami_import_get_items(12); // 全国からランダムに12件
-$count = is_array($items) ? count($items) : 0;
 ?>
 <main class="sefure-wrap">
   <div class="sefure-hero">
@@ -24,48 +22,6 @@ $count = is_array($items) ? count($items) : 0;
       <?php endforeach; ?>
     </div>
   </section>
-
-  <?php if ($count > 0): ?>
-    <section class="girls-section">
-      <h2 class="section-title">最新の女性会員</h2>
-      <div class="girls-grid">
-        <?php foreach($items as $item): 
-          $thumb = kami_import_normalize_url($item->samune ?? '');
-          $ext   = esc_url($item->url ?? '');
-          $name  = esc_html($item->name ?? '');
-          $age   = esc_html($item->age ?? '');
-          $figure= esc_html($item->figure ?? '');
-          $char  = esc_html($item->character ?? '');
-          $comment = esc_html($item->comment ?? '');
-        ?>
-          <article class="girl-card">
-            <?php if ($thumb): ?>
-              <img class="girl-thumb" src="<?php echo $thumb; ?>" alt="<?php echo $name; ?>">
-            <?php else: ?>
-              <div class="girl-thumb girl-thumb-placeholder"></div>
-            <?php endif; ?>
-
-            <div class="girl-body">
-              <h3 class="girl-name"><?php echo $name; ?><?php if($age !== ''): ?>（<?php echo $age; ?>）<?php endif; ?></h3>
-              <div class="girl-meta">
-                <?php if ($figure !== ''): ?><span class="girl-tag">体型: <?php echo $figure; ?></span><?php endif; ?>
-                <?php if ($char !== ''): ?><span class="girl-tag">タイプ: <?php echo $char; ?></span><?php endif; ?>
-              </div>
-              <?php if ($comment !== ''): ?><p class="girl-comment"><?php echo $comment; ?></p><?php endif; ?>
-            </div>
-
-            <div class="girl-actions">
-              <?php if ($ext): ?>
-                <a class="girl-btn" href="<?php echo esc_url($ext); ?>" target="_blank" rel="noopener noreferrer">プロフィールを見る</a>
-              <?php else: ?>
-                <span class="girl-no-link">リンクなし</span>
-              <?php endif; ?>
-            </div>
-          </article>
-        <?php endforeach; ?>
-      </div>
-    </section>
-  <?php endif; ?>
 
   <section class="content-section">
     <h2 class="section-title">セフレ掲示板とは</h2>
