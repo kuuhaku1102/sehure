@@ -13,7 +13,7 @@ $count = is_array($items) ? count($items) : 0;
       <p class="kami-sub">データベース（wp_kami_import）から表示中：<?php echo esc_html($count); ?>件</p>
     </div>
   </div>
-
+あああああああ
   <?php if (!$count): ?>
     <div class="kami-card" style="padding:16px;">
       <p style="margin:0;color:#374151;">
