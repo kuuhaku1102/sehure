@@ -37,4 +37,4 @@ jobs:
             --exclude='node_modules' \
             --exclude='.env' \
             --exclude='.DS_Store' \
-            ./ ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:public_html/everydayfitness.jp/wp-content/themes/kami-import-top-theme/
+            ./ ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:public_html/marissagregory.com/wp-content/themes/kami-import-top-theme/
