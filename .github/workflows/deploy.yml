@@ -1,0 +1,42 @@
+name: Deploy Sehure Theme to ConoHa WING
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    
+    steps:
+      # 🧾 コードチェックアウト
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      
+      # 🔐 SSHセットアップ
+      - name: Setup SSH key
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          ssh-keyscan -p ${{ secrets.SSH_PORT }} -H ${{ secrets.SSH_HOST }} >> ~/.ssh/known_hosts
+      
+      # 🔍 接続テスト（GitHub Actions → ConoHa）
+      - name: Test SSH connection
+        run: |
+          ssh -i ~/.ssh/id_ed25519 -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} "echo '✅ SSH connection successful!' && pwd"
+      
+      # 🚀 デプロイ（SFTP経由）
+      - name: Deploy theme files
+        uses: wlixcc/SFTP-Deploy-Action@v1.2.6
+        with:
+          server: ${{ secrets.SSH_HOST }}
+          port: ${{ secrets.SSH_PORT }}
+          username: ${{ secrets.SSH_USER }}
+          ssh_private_key: ${{ secrets.SSH_PRIVATE_KEY }}
+          local_path: ./
+          remote_path: "public_html/everydayfitness.jp/wp-content/themes/kami-import-top-theme/"
+          sftp_only: true
+          delete_remote_files: false
+          rsyncArgs: "--exclude='.git/' --exclude='.github/' --exclude='node_modules/' --exclude='.env' --exclude='.DS_Store'"
