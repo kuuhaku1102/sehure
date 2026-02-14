@@ -98,34 +98,59 @@ function kami_import_normalize_url($value) {
 }
 
 /**
- * 都道府県別のページを自動生成
+ * カスタムリライトルールを追加
  */
-function create_prefecture_pages() {
+function sefure_add_rewrite_rules() {
     $prefectures = get_prefectures();
     
     foreach ($prefectures as $slug => $name) {
-        $page = get_page_by_path($slug);
+        add_rewrite_rule(
+            '^' . $slug . '/?$',
+            'index.php?prefecture=' . $slug,
+            'top'
+        );
+    }
+}
+add_action('init', 'sefure_add_rewrite_rules');
+
+/**
+ * カスタムクエリ変数を追加
+ */
+function sefure_query_vars($vars) {
+    $vars[] = 'prefecture';
+    return $vars;
+}
+add_filter('query_vars', 'sefure_query_vars');
+
+/**
+ * テンプレートリダイレクト
+ */
+function sefure_template_redirect() {
+    $prefecture = get_query_var('prefecture');
+    
+    if ($prefecture) {
+        $prefectures = get_prefectures();
         
-        if (!$page) {
-            $page_data = array(
-                'post_title'    => $name . 'のセフレ掲示板',
-                'post_name'     => $slug,
-                'post_content'  => '',
-                'post_status'   => 'publish',
-                'post_type'     => 'page',
-                'post_author'   => 1,
-                'page_template' => 'page-prefecture.php'
-            );
+        if (isset($prefectures[$prefecture])) {
+            $template_file = get_template_directory() . '/' . $prefecture . '.php';
             
-            wp_insert_post($page_data);
+            if (file_exists($template_file)) {
+                include($template_file);
+                exit;
+            }
         }
     }
 }
+add_action('template_redirect', 'sefure_template_redirect');
 
 /**
- * テーマアクティベーション時に都道府県ページを作成
+ * パーマリンク設定を更新した時にリライトルールをフラッシュ
  */
-add_action('after_switch_theme', 'create_prefecture_pages');
+function sefure_flush_rewrite_rules() {
+    sefure_add_rewrite_rules();
+    flush_rewrite_rules();
+}
+register_activation_hook(__FILE__, 'sefure_flush_rewrite_rules');
 
 /**
  * Basic theme setup.
@@ -138,16 +163,16 @@ add_action('after_setup_theme', function() {
  * SEO用のメタタグを出力
  */
 function sefure_keijiban_meta_tags() {
+    $prefecture = get_query_var('prefecture');
+    
     if (is_front_page()) {
         echo '<meta name="description" content="全国47都道府県のセフレ掲示板。地域別にセフレを探せる安全な出会いの場を提供します。">' . "\n";
         echo '<meta name="keywords" content="セフレ,掲示板,出会い,全国">' . "\n";
-    } elseif (is_page()) {
-        global $post;
+    } elseif ($prefecture) {
         $prefectures = get_prefectures();
-        $slug = $post->post_name;
         
-        if (isset($prefectures[$slug])) {
-            $pref_name = $prefectures[$slug];
+        if (isset($prefectures[$prefecture])) {
+            $pref_name = $prefectures[$prefecture];
             echo '<meta name="description" content="' . esc_attr($pref_name) . 'のセフレ掲示板。' . esc_attr($pref_name) . 'で安全にセフレを探せる出会いの場を提供します。">' . "\n";
             echo '<meta name="keywords" content="セフレ,掲示板,' . esc_attr($pref_name) . ',出会い">' . "\n";
         }
@@ -159,13 +184,13 @@ add_action('wp_head', 'sefure_keijiban_meta_tags');
  * 構造化データ（パンくずリスト）を出力
  */
 function sefure_keijiban_breadcrumb_schema() {
-    if (!is_page()) return;
+    $prefecture = get_query_var('prefecture');
     
-    global $post;
+    if (!$prefecture) return;
+    
     $prefectures = get_prefectures();
-    $slug = $post->post_name;
     
-    if (isset($prefectures[$slug])) {
+    if (isset($prefectures[$prefecture])) {
         $schema = array(
             '@context' => 'https://schema.org',
             '@type' => 'BreadcrumbList',
@@ -179,8 +204,8 @@ function sefure_keijiban_breadcrumb_schema() {
                 array(
                     '@type' => 'ListItem',
                     'position' => 2,
-                    'name' => $prefectures[$slug] . 'のセフレ掲示板',
-                    'item' => get_permalink()
+                    'name' => $prefectures[$prefecture] . 'のセフレ掲示板',
+                    'item' => home_url('/' . $prefecture . '/')
                 )
             )
         );
