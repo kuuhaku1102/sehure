@@ -27,16 +27,14 @@ jobs:
         run: |
           ssh -i ~/.ssh/id_ed25519 -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} "echo '✅ SSH connection successful!' && pwd"
       
-      # 🚀 デプロイ（SFTP経由）
-      - name: Deploy theme files
-        uses: wlixcc/SFTP-Deploy-Action@v1.2.6
-        with:
-          server: ${{ secrets.SSH_HOST }}
-          port: ${{ secrets.SSH_PORT }}
-          username: ${{ secrets.SSH_USER }}
-          ssh_private_key: ${{ secrets.SSH_PRIVATE_KEY }}
-          local_path: ./
-          remote_path: public_html/everydayfitness.jp/wp-content/themes/kami-import-top-theme
-          sftp_only: true
-          delete_remote_files: false
-          args: '-avz --exclude .git --exclude .github --exclude node_modules --exclude .env --exclude .DS_Store'
+      # 🚀 デプロイ（rsync over SSH）
+      - name: Deploy theme files via rsync
+        run: |
+          rsync -avz --delete \
+            -e "ssh -i ~/.ssh/id_ed25519 -p ${{ secrets.SSH_PORT }} -o StrictHostKeyChecking=no" \
+            --exclude='.git' \
+            --exclude='.github' \
+            --exclude='node_modules' \
+            --exclude='.env' \
+            --exclude='.DS_Store' \
+            ./ ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:public_html/everydayfitness.jp/wp-content/themes/kami-import-top-theme/
