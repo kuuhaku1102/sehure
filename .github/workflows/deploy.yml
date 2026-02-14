@@ -39,4 +39,4 @@ jobs:
           remote_path: public_html/everydayfitness.jp/wp-content/themes/kami-import-top-theme
           sftp_only: true
           delete_remote_files: false
-          args: '-avz --exclude=.git --exclude=.github --exclude=node_modules --exclude=.env --exclude=.DS_Store'
+          args: '-avz --exclude .git --exclude .github --exclude node_modules --exclude .env --exclude .DS_Store'
