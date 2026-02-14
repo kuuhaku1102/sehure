@@ -3,9 +3,6 @@
  * 埼玉県のセフレ掲示板
  */
 
-// WordPress環境の読み込み
-require_once(__DIR__ . '/wp-load.php');
-
 $pref_slug = 'saitama';
 $pref_name = '埼玉県';
 

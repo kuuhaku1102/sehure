@@ -3,9 +3,6 @@
  * 京都府のセフレ掲示板
  */
 
-// WordPress環境の読み込み
-require_once(__DIR__ . '/wp-load.php');
-
 $pref_slug = 'kyoto';
 $pref_name = '京都府';
 

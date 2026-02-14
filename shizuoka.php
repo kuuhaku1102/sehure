@@ -3,9 +3,6 @@
  * 静岡県のセフレ掲示板
  */
 
-// WordPress環境の読み込み
-require_once(__DIR__ . '/wp-load.php');
-
 $pref_slug = 'shizuoka';
 $pref_name = '静岡県';
 

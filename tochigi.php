@@ -3,9 +3,6 @@
  * 栃木県のセフレ掲示板
  */
 
-// WordPress環境の読み込み
-require_once(__DIR__ . '/wp-load.php');
-
 $pref_slug = 'tochigi';
 $pref_name = '栃木県';
 

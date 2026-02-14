@@ -3,9 +3,6 @@
  * 沖縄県のセフレ掲示板
  */
 
-// WordPress環境の読み込み
-require_once(__DIR__ . '/wp-load.php');
-
 $pref_slug = 'okinawa';
 $pref_name = '沖縄県';
 
