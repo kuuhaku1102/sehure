@@ -65,6 +65,7 @@ $count = is_array($items) ? count($items) : 0;
 
   <div class="kami-footer">
     <?php echo esc_html(date_i18n('Y年n月j日')); ?> / Kami Import Top Theme
+    <!-- 🚀 デプロイテスト: <?php echo date('Y-m-d H:i:s'); ?> -->
   </div>
 </main>
 <?php
