@@ -13,9 +13,9 @@ $prefectures = get_prefectures();
 $slug = $post->post_name;
 $pref_name = isset($prefectures[$slug]) ? $prefectures[$slug] : '';
 
-// ランダムに8-12件表示
+// ランダムに8-12件表示（都道府県に関係なく全国からランダム）
 $random_count = rand(8, 12);
-$items = kami_import_get_items($slug, $random_count);
+$items = kami_import_get_items($random_count);
 $count = is_array($items) ? count($items) : 0;
 ?>
 <main class="sefure-wrap prefecture-page">

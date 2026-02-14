@@ -62,31 +62,21 @@ function get_prefectures() {
 }
 
 /**
- * Get rows from wp_kami_import.
+ * Get rows from wp_kami_import (全てランダムに取得)
  */
-function kami_import_get_items($prefecture = null, $limit = 60) {
+function kami_import_get_items($limit = 60) {
     global $wpdb;
     $table = $wpdb->prefix . 'kami_import';
 
     $limit = (int)$limit;
     if ($limit <= 0) { $limit = 60; }
 
-    if ($prefecture) {
-        // 特定の都道府県のデータを取得
-        $sql = $wpdb->prepare(
-            "SELECT * FROM {$table} WHERE post_status = %s AND prefecture = %s ORDER BY RAND() LIMIT %d",
-            'publish',
-            $prefecture,
-            $limit
-        );
-    } else {
-        // 全国のデータをランダムに取得
-        $sql = $wpdb->prepare(
-            "SELECT * FROM {$table} WHERE post_status = %s ORDER BY RAND() LIMIT %d",
-            'publish',
-            $limit
-        );
-    }
+    // 全国のデータをランダムに取得
+    $sql = $wpdb->prepare(
+        "SELECT * FROM {$table} WHERE post_status = %s ORDER BY RAND() LIMIT %d",
+        'publish',
+        $limit
+    );
 
     return $wpdb->get_results($sql);
 }

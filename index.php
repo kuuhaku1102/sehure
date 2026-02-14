@@ -4,7 +4,7 @@ if (!defined('ABSPATH')) { exit; }
 get_header();
 
 $prefectures = get_prefectures();
-$items = kami_import_get_items(null, 12); // 全国からランダムに12件
+$items = kami_import_get_items(12); // 全国からランダムに12件
 $count = is_array($items) ? count($items) : 0;
 ?>
 <main class="sefure-wrap">
