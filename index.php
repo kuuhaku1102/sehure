@@ -1,94 +1,56 @@
 <?php
+/**
+ * 汎用フォールバックテンプレート（ブログ一覧・検索・その他）
+ * @package Torekamafia_Yamaguchi
+ */
 if (!defined('ABSPATH')) { exit; }
-
 get_header();
-
-$prefectures = get_prefectures();
 ?>
-<main class="sefure-wrap">
-  <div class="sefure-hero">
-    <h1 class="sefure-title">セフレ掲示板</h1>
-    <p class="sefure-subtitle">全国47都道府県から安全にセフレを探せる</p>
+<div class="tmf-page">
+  <div class="tmf-container">
+    <header class="tmf-page__head reveal">
+      <h1 class="tmf-page__title">
+        <?php
+        if (is_search()) {
+          printf('「%s」の検索結果', esc_html(get_search_query()));
+        } elseif (is_archive()) {
+          the_archive_title();
+        } else {
+          echo esc_html(get_the_title(get_option('page_for_posts')) ?: 'ブログ');
+        }
+        ?>
+      </h1>
+    </header>
+
+    <?php if (have_posts()) : ?>
+      <div class="tmf-archive-grid tmf-grid tmf-grid--3 reveal-stagger">
+        <?php while (have_posts()) : the_post(); ?>
+          <article class="tmf-glass tmf-kaitori-card">
+            <a href="<?php the_permalink(); ?>">
+              <div class="tmf-kaitori-card__img" style="aspect-ratio:16/10">
+                <?php if (has_post_thumbnail()) : the_post_thumbnail('medium', array('loading' => 'lazy')); else : ?>
+                  <span class="tmf-kaitori-card__ph">◆</span>
+                <?php endif; ?>
+              </div>
+              <div class="tmf-kaitori-card__body">
+                <span class="tmf-kaitori-card__cat"><?php echo esc_html(get_the_date('Y.m.d')); ?></span>
+                <h2 class="tmf-kaitori-card__name"><?php the_title(); ?></h2>
+                <p class="tmf-kaitori-card__note"><?php echo esc_html(wp_trim_words(get_the_excerpt(), 40)); ?></p>
+              </div>
+            </a>
+          </article>
+        <?php endwhile; ?>
+      </div>
+      <div class="tmf-center" style="margin-top:50px">
+        <?php the_posts_pagination(array('mid_size' => 1, 'prev_text' => '←', 'next_text' => '→')); ?>
+      </div>
+    <?php else : ?>
+      <p class="tmf-center tmf-lead">該当する記事が見つかりませんでした。</p>
+    <?php endif; ?>
+
+    <div class="tmf-backlink">
+      <a class="tmf-btn tmf-btn--ghost" href="<?php echo esc_url(home_url('/')); ?>"><span>トップへ戻る</span></a>
+    </div>
   </div>
-
-  <section class="prefecture-section">
-    <h2 class="section-title">都道府県から探す</h2>
-    <div class="prefecture-grid">
-      <?php foreach($prefectures as $slug => $name): ?>
-        <a href="<?php echo esc_url(home_url('/' . $slug . '/')); ?>" class="prefecture-card">
-          <span class="prefecture-name"><?php echo esc_html($name); ?></span>
-          <span class="prefecture-arrow">→</span>
-        </a>
-      <?php endforeach; ?>
-    </div>
-  </section>
-
-  <section class="content-section">
-    <h2 class="section-title">セフレ掲示板とは</h2>
-    <div class="content-box">
-      <p>セフレ掲示板は、全国47都道府県から安全にセフレを探せる出会いの場を提供しています。各都道府県ごとに地域に特化した出会いの情報を掲載しており、あなたの住んでいる地域で理想のセフレを見つけることができます。</p>
-      <p>当サイトでは、安全性を最優先に考え、信頼できる出会い系サービスのみを紹介しています。無料の掲示板とは異なり、年齢確認や本人確認が徹底されたサービスを通じて、安心して出会いを楽しむことができます。</p>
-      
-      <h3>なぜ無料のセフレ掲示板は危険なのか</h3>
-      <p>インターネット上には多くの無料セフレ掲示板が存在しますが、その多くは業者や詐欺の温床となっています。無料で誰でも書き込める掲示板は、運営の監視が行き届いておらず、以下のようなリスクがあります。</p>
-      <ul>
-        <li>援デリ業者やデート商法による金銭トラブル</li>
-        <li>個人情報の漏洩や悪用</li>
-        <li>未成年者との接触による法的リスク</li>
-        <li>投資詐欺やロマンス詐欺の被害</li>
-        <li>ぼったくりバーへの誘導</li>
-      </ul>
-      
-      <h3>安全にセフレを作るための3つのポイント</h3>
-      <p>当サイトでは、以下の3つのポイントを重視して、安全な出会いをサポートしています。</p>
-      <ul>
-        <li><strong>年齢確認・本人確認が徹底されたサービス</strong>：法律に基づいた運営を行っている出会い系サービスのみを紹介</li>
-        <li><strong>24時間365日の監視体制</strong>：業者や不審なユーザーを排除する仕組みが整っている</li>
-        <li><strong>プライバシー保護</strong>：個人情報の管理が徹底されており、安心して利用できる</li>
-      </ul>
-      
-      <h3>セフレ掲示板の使い方</h3>
-      <p>当サイトでは、47都道府県別にセフレを探すことができます。あなたの住んでいる地域、または出張先や旅行先の都道府県を選択して、その地域で出会いを求めている女性を探しましょう。</p>
-      <p>各都道府県ページには、その地域で出会いを求めている女性の情報が掲載されています。プロフィールを確認して、気になる女性がいたら「プロフィールを見る」ボタンから詳細をチェックしてください。</p>
-      
-      <h3>初めての方へ：セフレを作る際の注意点</h3>
-      <p>セフレ関係を築く際には、以下の点に注意してください。</p>
-      <ul>
-        <li>相手を尊重し、誠実なコミュニケーションを心がける</li>
-        <li>初回は必ず人目のある場所で会う</li>
-        <li>お互いの同意を確認してから関係を進める</li>
-        <li>個人情報の取り扱いには十分注意する</li>
-        <li>金銭のやり取りは避ける</li>
-      </ul>
-    </div>
-  </section>
-
-  <section class="content-section">
-    <h2 class="section-title">都道府県別セフレ掲示板の特徴</h2>
-    <div class="content-box">
-      <p>当サイトでは、47都道府県それぞれに特化したセフレ掲示板ページを用意しています。地域によって出会いの傾向や特徴が異なるため、あなたの地域に合った出会い方を見つけることができます。</p>
-      
-      <h3>都市部と地方の違い</h3>
-      <p>東京、大阪、名古屋などの大都市圏では、多くの女性が登録しており、出会いのチャンスが豊富です。一方、地方都市や郊外では、登録者数は少ないものの、真剣に出会いを求めている女性が多い傾向にあります。</p>
-      
-      <h3>地域別の出会いの傾向</h3>
-      <ul>
-        <li><strong>北海道・東北地方</strong>：真面目で誠実な女性が多く、長期的な関係を求める傾向</li>
-        <li><strong>関東地方</strong>：多様な出会いがあり、カジュアルな関係を求める女性も多い</li>
-        <li><strong>中部地方</strong>：バランスが取れており、様々なタイプの女性と出会える</li>
-        <li><strong>関西地方</strong>：フレンドリーで明るい女性が多く、出会いやすい雰囲気</li>
-        <li><strong>中国・四国地方</strong>：落ち着いた雰囲気の女性が多く、じっくりと関係を築ける</li>
-        <li><strong>九州・沖縄地方</strong>：情熱的で積極的な女性が多い傾向</li>
-      </ul>
-      
-      <h3>あなたの地域でセフレを探す</h3>
-      <p>上記の都道府県一覧から、あなたの住んでいる地域を選択してください。各都道府県ページでは、その地域に特化した出会いの情報と、実際に出会いを求めている女性のプロフィールを確認できます。</p>
-    </div>
-  </section>
-
-  <div class="sefure-footer-info">
-    <?php echo esc_html(date_i18n('Y年n月j日')); ?> / セフレ掲示板
-  </div>
-</main>
-<?php
-get_footer();
+</div>
+<?php get_footer(); ?>
