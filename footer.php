@@ -36,7 +36,7 @@ $insta = tmf_opt('tmf_instagram');
         <span class="tmf-brand__mark">◆</span>
         <?php echo esc_html(tmf_opt('tmf_shop_name', 'TOREKAMAFIA 山口店')); ?>
       </div>
-      <p class="tmf-footer__desc"><?php echo esc_html(tmf_opt('tmf_shop_name_ja', 'トレカマフィア 山口店')); ?><br>山口・広島エリア最高水準のトレカ買取専門店</p>
+      <p class="tmf-footer__desc"><?php echo esc_html(tmf_opt('tmf_shop_name_ja', 'トレカマフィア 山口店')); ?><br>ポケモンカード PSA10・未開封BOX 専門の買取店<br>山口・広島エリア最高水準の買取</p>
       <div class="tmf-footer__social">
         <?php if ($x) : ?><a href="<?php echo esc_url($x); ?>" target="_blank" rel="noopener" aria-label="X">X</a><?php endif; ?>
         <?php if ($insta) : ?><a href="<?php echo esc_url($insta); ?>" target="_blank" rel="noopener" aria-label="Instagram">Instagram</a><?php endif; ?>

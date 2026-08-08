@@ -116,7 +116,7 @@ function tmf_register_post_types() {
         'show_in_rest'  => true,
     ));
 
-    // 買取カテゴリー（ポケカ / ワンピ / 遊戯王 など）
+    // 買取カテゴリー（PSA10 / 未開封BOX）
     register_taxonomy('kaitori_cat', 'kaitori', array(
         'labels' => array(
             'name'          => '買取カテゴリー',
@@ -232,7 +232,7 @@ function tmf_customize_register($wp_customize) {
     $hero_text = array(
         'tmf_hero_kicker'  => array('label' => '上部の小見出し', 'default' => '山口・広島エリア 最高水準の買取', 'type' => 'text'),
         'tmf_hero_title'   => array('label' => 'メインコピー', 'default' => 'その一枚、<br>東京基準で買い取る。', 'type' => 'textarea'),
-        'tmf_hero_sub'     => array('label' => 'サブコピー', 'default' => '秋葉原水準の買取表 × 迅速査定 × 即日お支払い。ポケカ・ワンピ・遊戯王、高価買取はトレカマフィア山口店へ。', 'type' => 'textarea'),
+        'tmf_hero_sub'     => array('label' => 'サブコピー', 'default' => '秋葉原水準の買取表 × 迅速査定 × 即日お支払い。ポケモンカードの PSA10・未開封BOX 専門の高価買取は、トレカマフィア山口店へ。', 'type' => 'textarea'),
         'tmf_cta1_text'    => array('label' => 'CTAボタン1 テキスト', 'default' => 'LINEで無料査定', 'type' => 'text'),
         'tmf_cta1_url'     => array('label' => 'CTAボタン1 URL', 'default' => '', 'type' => 'text'),
         'tmf_cta2_text'    => array('label' => 'CTAボタン2 テキスト', 'default' => '買取の流れを見る', 'type' => 'text'),
@@ -277,7 +277,7 @@ function tmf_customize_register($wp_customize) {
         'panel' => 'tmf_panel',
     ));
     $wp_customize->add_setting('tmf_meta_desc', array(
-        'default'           => '山口県周南市のトレカ買取専門店「トレカマフィア山口店」。ポケモンカード・ワンピース・遊戯王などを秋葉原水準の買取表で高価買取。迅速査定・即日お支払い、山口・広島エリア最高水準の買取をお約束します。',
+        'default'           => '山口県周南市のポケモンカード買取専門店「トレカマフィア山口店」。PSA10鑑定品・未開封BOXを秋葉原水準の買取表で高価買取。迅速査定・即日お支払い、山口・広島エリア最高水準の買取をお約束します。',
         'sanitize_callback' => 'sanitize_textarea_field',
     ));
     $wp_customize->add_control('tmf_meta_desc', array(
@@ -312,7 +312,7 @@ function tmf_seo_meta() {
     } elseif (is_post_type_archive('news')) {
         $desc = 'トレカマフィア山口店のお知らせ・イベント情報一覧。オリパやキャンペーン、買取強化情報を随時更新中。';
     } elseif (is_post_type_archive('kaitori')) {
-        $desc = 'トレカマフィア山口店の強化買取カード一覧。ポケカ・ワンピ・遊戯王など、高価買取中のカードをチェック。';
+        $desc = 'トレカマフィア山口店の強化買取カード一覧。ポケモンカードのPSA10・未開封BOXを高価買取中。注目カードをチェック。';
     }
     $desc = trim(wp_strip_all_tags($desc));
     if ($desc === '') { $desc = tmf_opt('tmf_meta_desc'); }
@@ -451,13 +451,14 @@ add_action('after_switch_theme', 'tmf_flush_rewrite');
  * 買取カテゴリーの初期データ（初回有効化時に作成）
  */
 function tmf_seed_categories() {
-    if (get_option('tmf_seeded_cats')) return;
-    $cats = array('ポケモンカード', 'ワンピースカード', '遊戯王', 'デュエルマスターズ', 'ヴァイスシュヴァルツ', 'MTG');
+    // 取扱いは「ポケモン PSA10」「未開封BOX」のみ。バージョンで再シード管理
+    if (get_option('tmf_seeded_cats') === 'v2') return;
+    $cats = array('PSA10', '未開封BOX');
     foreach ($cats as $c) {
         if (!term_exists($c, 'kaitori_cat')) {
             wp_insert_term($c, 'kaitori_cat');
         }
     }
-    update_option('tmf_seeded_cats', 1);
+    update_option('tmf_seeded_cats', 'v2');
 }
 add_action('init', 'tmf_seed_categories', 20);

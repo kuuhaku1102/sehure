@@ -21,7 +21,7 @@ $cta2_url = tmf_opt('tmf_cta2_url', '#flow');
     <div class="tmf-hero__copy">
       <span class="tmf-hero__kicker"><?php echo esc_html(tmf_opt('tmf_hero_kicker', '山口・広島エリア 最高水準の買取')); ?></span>
       <h1 class="tmf-hero__title"><span class="g"><?php echo wp_kses_post(nl2br(tmf_opt('tmf_hero_title', 'その一枚、<br>東京基準で買い取る。'))); ?></span></h1>
-      <p class="tmf-hero__sub"><?php echo wp_kses_post(tmf_opt('tmf_hero_sub', '秋葉原水準の買取表 × 迅速査定 × 即日お支払い。ポケカ・ワンピ・遊戯王、高価買取はトレカマフィア山口店へ。')); ?></p>
+      <p class="tmf-hero__sub"><?php echo wp_kses_post(tmf_opt('tmf_hero_sub', '秋葉原水準の買取表 × 迅速査定 × 即日お支払い。ポケモンカードの PSA10・未開封BOX 専門の高価買取は、トレカマフィア山口店へ。')); ?></p>
       <div class="tmf-hero__btns">
         <a class="tmf-btn tmf-btn--primary" href="<?php echo esc_url($cta1_url); ?>" <?php echo (strpos($cta1_url, 'http') === 0 ? 'target="_blank" rel="noopener"' : ''); ?>>
           <span><?php echo esc_html(tmf_opt('tmf_cta1_text', 'LINEで無料査定')); ?></span>
@@ -90,34 +90,21 @@ $cta2_url = tmf_opt('tmf_cta2_url', '#flow');
   </div>
 </section>
 
-<!-- ============ 買取カテゴリー ============ -->
+<!-- ============ 取扱い品目（PSA10 / 未開封BOX 専門） ============ -->
 <section class="tmf-section" id="category">
   <div class="tmf-container">
     <div class="tmf-section__head tmf-center reveal">
-      <span class="tmf-eyebrow">Buyback Category</span>
-      <h2 class="tmf-h2"><span class="g">なんでも</span>高価買取</h2>
-      <p class="tmf-lead">ポケカを中心に、主要TCGを幅広く強化買取中。ジャンルを問わずまとめてお売りいただけます。</p>
+      <span class="tmf-eyebrow">Our Specialty</span>
+      <h2 class="tmf-h2">ポケカ <span class="g">PSA10・BOX</span> 専門買取</h2>
+      <p class="tmf-lead">あえて品目を絞り、ポケモンカードの「PSA10鑑定品」と「未開封BOX」に特化。専門店だからこそ相場に強く、他店に負けない金額をお出しします。</p>
     </div>
-    <div class="tmf-grid tmf-grid--3 reveal-stagger">
+    <div class="tmf-grid tmf-grid--2 reveal-stagger">
       <?php
-      $cats = array(
-        array('⚡', 'ポケモンカード', 'ポケカ / PSA / シングル'),
-        array('🏴‍☠️', 'ワンピースカード', 'リーダー / パラレル'),
-        array('🐉', '遊戯王', '初期 / レリーフ / 高レア'),
-        array('🔥', 'デュエル・マスターズ', 'スーパーレア他'),
-        array('🌸', 'ヴァイスシュヴァルツ', 'SP / サイン'),
-        array('✨', 'その他TCG・BOX', 'MTG / 未開封BOX'),
+      $items = array(
+        array('💎', 'ポケモン PSA10', 'PSA鑑定「10」の高額シングルを強化買取。人気の旧裏・SR・SAR・プロモまで、鑑定品ならまとめて高価査定します。'),
+        array('📦', '未開封BOX', 'ポケカの未開封シュリンク付きBOXを買取強化中。最新弾から旧弾の高額BOXまで、箱のまま高値でお引き取りします。'),
       );
-      // カスタム分類が登録されていれば優先表示
-      $terms = get_terms(array('taxonomy' => 'kaitori_cat', 'hide_empty' => false));
-      if (!is_wp_error($terms) && !empty($terms) && get_option('tmf_seeded_cats')) {
-        $icons = array('⚡', '🏴‍☠️', '🐉', '🔥', '🌸', '✨', '🎴', '💎');
-        $cats = array();
-        foreach ($terms as $idx => $t) {
-          $cats[] = array($icons[$idx % count($icons)], $t->name, ($t->count > 0 ? $t->count . '点 掲載中' : '強化買取中'));
-        }
-      }
-      foreach ($cats as $c) : ?>
+      foreach ($items as $c) : ?>
         <a class="tmf-glass tmf-cat" href="<?php echo esc_url(get_post_type_archive_link('kaitori') ?: '#kaitori'); ?>">
           <span class="tmf-cat__icon"><?php echo $c[0]; ?></span>
           <span class="tmf-cat__body">

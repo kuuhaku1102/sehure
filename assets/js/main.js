@@ -140,7 +140,7 @@
     if (!canvas) return;
     var ctx = canvas.getContext('2d');
     var w, h, dpr, particles = [];
-    var COLORS = ['rgba(34,228,255,', 'rgba(168,85,247,', 'rgba(255,45,149,'];
+    var COLORS = ['rgba(255,59,71,', 'rgba(200,16,46,', 'rgba(255,207,92,'];
 
     function resize() {
       dpr = Math.min(window.devicePixelRatio || 1, 2);
