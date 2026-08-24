@@ -92,9 +92,52 @@ function tmf_maybe_upgrade_db() {
     if (get_option('tmf_db_version') !== TMF_DB_VERSION) {
         tmf_create_tables();
     }
+    tmf_ensure_columns();
 }
 add_action('admin_init', 'tmf_maybe_upgrade_db');
-add_action('after_switch_theme', 'tmf_create_tables');
+add_action('after_switch_theme', function () { tmf_create_tables(); tmf_ensure_columns(); });
+
+/**
+ * 必須カラムを確実に用意（dbDeltaが取りこぼしてもALTERで補完）
+ */
+function tmf_ensure_columns() {
+    global $wpdb;
+    $t = tmf_db_tables();
+    $table = $t['cards'];
+    // テーブルが無ければ何もしない（create側で作られる）
+    if ($wpdb->get_var($wpdb->prepare("SHOW TABLES LIKE %s", $table)) !== $table) return;
+
+    $existing = $wpdb->get_col("SHOW COLUMNS FROM {$table}");
+    if (!$existing) return;
+    $cols = array(
+        'snidan'        => "BIGINT NOT NULL DEFAULT 0",
+        'big'           => "BIGINT NOT NULL DEFAULT 0",
+        'bank'          => "BIGINT NOT NULL DEFAULT 0",
+        'sinsoku'       => "BIGINT NOT NULL DEFAULT 0",
+        'rate'          => "VARCHAR(16) NOT NULL DEFAULT ''",
+        'big_pred_rate' => "VARCHAR(16) NOT NULL DEFAULT ''",
+        'big_pred'      => "BIGINT NOT NULL DEFAULT 0",
+        'psa_min'       => "BIGINT NOT NULL DEFAULT 0",
+        'kaitori'       => "BIGINT NOT NULL DEFAULT 0",
+        'realtime'      => "BIGINT NOT NULL DEFAULT 0",
+        'teine'         => "BIGINT NOT NULL DEFAULT 0",
+        'teine_kizu'    => "BIGINT NOT NULL DEFAULT 0",
+        'diff_bigpred'  => "BIGINT NOT NULL DEFAULT 0",
+        'diff_teine'    => "BIGINT NOT NULL DEFAULT 0",
+        'profit'        => "VARCHAR(16) NOT NULL DEFAULT ''",
+        'note'          => "VARCHAR(191) NOT NULL DEFAULT ''",
+        'forecast'      => "BIGINT NOT NULL DEFAULT 0",
+        'forecast_dir'  => "VARCHAR(8) NOT NULL DEFAULT ''",
+        'forecast_pct'  => "FLOAT NOT NULL DEFAULT 0",
+        'series'        => "TEXT NULL",
+        'image'         => "TEXT NULL",
+    );
+    foreach ($cols as $name => $def) {
+        if (!in_array($name, $existing, true)) {
+            $wpdb->query("ALTER TABLE {$table} ADD COLUMN {$name} {$def}");
+        }
+    }
+}
 
 /* ============================================================
  * ユーティリティ
@@ -235,6 +278,8 @@ function tmf_import_prices($manual = false) {
  * 同梱CSV（inc/seed-prices.csv）から取り込む（Google共有設定なしで動作）
  */
 function tmf_import_seed() {
+    global $wpdb;
+    $t = tmf_db_tables();
     $path = get_template_directory() . '/inc/seed-prices.csv';
     if (!file_exists($path)) {
         return array('ok' => false, 'msg' => '同梱データ（inc/seed-prices.csv）が見つかりません。');
@@ -244,6 +289,10 @@ function tmf_import_seed() {
     if (empty($rows)) {
         return array('ok' => false, 'msg' => '同梱データが空です。');
     }
+    // 列を保証し、カードは全入れ替え（履歴 wp_tmf_history は温存）
+    tmf_create_tables();
+    tmf_ensure_columns();
+    $wpdb->query("TRUNCATE TABLE {$t['cards']}");
     return tmf_process_rows($rows);
 }
 
@@ -493,12 +542,20 @@ function tmf_get_cards($args = array()) {
     global $wpdb;
     $t = tmf_db_tables();
     $limit = isset($args['limit']) ? (int)$args['limit'] : 2000;
-    $sql = "SELECT code,name,grade,trend,price,price_date,d7,ma5,ma20,vol,
-                   snidan,big,bank,sinsoku,rate,big_pred_rate,big_pred,kaitori,realtime,
-                   teine,teine_kizu,diff_bigpred,diff_teine,profit,note,psa_min,
-                   image,series,forecast,forecast_dir,forecast_pct
-            FROM {$t['cards']} ORDER BY price DESC LIMIT %d";
-    return $wpdb->get_results($wpdb->prepare($sql, $limit));
+    // SELECT * で列不足に強く（旧DBに列が無くてもエラーで全消えしない）
+    $rows = $wpdb->get_results($wpdb->prepare(
+        "SELECT * FROM {$t['cards']} ORDER BY price DESC LIMIT %d", $limit
+    ));
+    // 参照する数値/文字プロパティを保証（未定義プロパティ回避）
+    $defaults = array(
+        'snidan'=>0,'big'=>0,'bank'=>0,'sinsoku'=>0,'big_pred'=>0,'kaitori'=>0,
+        'teine'=>0,'teine_kizu'=>0,'psa_min'=>0,'d7'=>0,'forecast'=>0,'forecast_pct'=>0,
+        'rate'=>'','profit'=>'','note'=>'','trend'=>'','series'=>'','image'=>'','forecast_dir'=>'',
+    );
+    foreach ((array)$rows as $r) {
+        foreach ($defaults as $k => $v) { if (!isset($r->$k)) { $r->$k = $v; } }
+    }
+    return $rows;
 }
 
 /** 相場検索ページ（テンプレート使用）のURLを取得。無ければ空文字 */
