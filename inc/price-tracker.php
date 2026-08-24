@@ -11,7 +11,7 @@
 
 if (!defined('ABSPATH')) { exit; }
 
-define('TMF_DB_VERSION', '1.1.0');
+define('TMF_DB_VERSION', '1.2.0');
 
 /* ============================================================
  * テーブル作成
@@ -51,6 +51,7 @@ function tmf_create_tables() {
         rate VARCHAR(16) NOT NULL DEFAULT '',
         big_pred_rate VARCHAR(16) NOT NULL DEFAULT '',
         big_pred BIGINT NOT NULL DEFAULT 0,
+        psa_min BIGINT NOT NULL DEFAULT 0,
         kaitori BIGINT NOT NULL DEFAULT 0,
         realtime BIGINT NOT NULL DEFAULT 0,
         teine BIGINT NOT NULL DEFAULT 0,
@@ -284,12 +285,14 @@ function tmf_process_rows($rows) {
         $sinsoku = tmf_to_int(tmf_col($row, array('シンソク', 'sinsoku')));
         $kaitori = tmf_to_int(tmf_col($row, array('買取表', 'kaitori')));
         $big_pred = tmf_to_int(tmf_col($row, array('BIG予想値', 'big_pred')));
+        $psa_price = tmf_to_int(tmf_col($row, array('PSA10相場', 'PSA10直近5件平均', 'PSA10平均')));
+        $psa_min   = tmf_to_int(tmf_col($row, array('PSA10最安', 'PSA10最安出品')));
 
-        // 代表価格：買取表 → スニダン → BIG → 分析タブ最新価格
-        $price = tmf_to_int(tmf_col($row, array('最新価格')));
+        // 代表価格：PSA10相場 → PSA10最安 → 最新価格 → 買取表
+        $price = $psa_price;
+        if ($price <= 0) $price = $psa_min;
+        if ($price <= 0) $price = tmf_to_int(tmf_col($row, array('最新価格')));
         if ($price <= 0) $price = $kaitori;
-        if ($price <= 0) $price = $snidan;
-        if ($price <= 0) $price = $big;
 
         $pdate = tmf_col($row, array('最新日', '取得日時', 'price_date'));
         $pdate = tmf_normalize_date($pdate, $today);
@@ -326,6 +329,7 @@ function tmf_process_rows($rows) {
             'rate'          => mb_substr(tmf_col($row, array('利率', 'rate')), 0, 16),
             'big_pred_rate' => mb_substr(tmf_col($row, array('BIG予想値利率', 'big_pred_rate')), 0, 16),
             'big_pred'      => $big_pred,
+            'psa_min'       => $psa_min,
             'kaitori'       => $kaitori,
             'realtime'      => tmf_to_int(tmf_col($row, array('リアルタイム満額', 'realtime'))),
             'teine'         => tmf_to_int(tmf_col($row, array('底値', 'teine'))),
@@ -499,8 +503,7 @@ function tmf_get_cards($args = array()) {
     $t = tmf_db_tables();
     $limit = isset($args['limit']) ? (int)$args['limit'] : 2000;
     $sql = "SELECT code,name,grade,trend,price,price_date,d7,ma5,ma20,vol,
-                   snidan,big,bank,sinsoku,rate,big_pred_rate,big_pred,kaitori,realtime,
-                   teine,teine_kizu,diff_bigpred,diff_teine,profit,note,
+                   psa_min,kaitori,
                    image,series,forecast,forecast_dir,forecast_pct
             FROM {$t['cards']} ORDER BY price DESC LIMIT %d";
     return $wpdb->get_results($wpdb->prepare($sql, $limit));
@@ -674,7 +677,7 @@ function tmf_admin_page() {
         <p>Googleの共有設定なしで、すぐに相場ページを表示できます。下の2つを順に押すだけ。</p>
         <form method="post" style="display:flex;gap:14px;flex-wrap:wrap;align-items:center">
             <?php wp_nonce_field('tmf_actions'); ?>
-            <button type="submit" name="tmf_seed" class="button button-primary button-hero">① 同梱データを取り込む（総合価格表）</button>
+            <button type="submit" name="tmf_seed" class="button button-primary button-hero">① 同梱データを取り込む（PSA10相場・240件）</button>
             <button type="submit" name="tmf_make_page" class="button button-hero">② 相場検索ページを自動作成</button>
         </form>
         <p class="description">※「同梱データ」は現時点のPSA10相場スナップショットです。以降は下の自動取込で最新化・履歴蓄積できます。</p>

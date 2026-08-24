@@ -133,7 +133,7 @@
       var tr = document.createElement('tr');
       tr.className = 'tmf-souba__detail';
       var td = document.createElement('td');
-      td.colSpan = 14;
+      td.colSpan = 6;
       td.innerHTML = '<div class="tmf-souba__detail-inner"><canvas class="tmf-bigchart" height="200"></canvas><p class="tmf-souba__loading">読み込み中…</p></div>';
       tr.appendChild(td);
       row.parentNode.insertBefore(tr, row.nextSibling);
