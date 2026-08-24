@@ -11,7 +11,7 @@
 
 if (!defined('ABSPATH')) { exit; }
 
-define('TMF_DB_VERSION', '1.0.1');
+define('TMF_DB_VERSION', '1.1.0');
 
 /* ============================================================
  * テーブル作成
@@ -44,6 +44,21 @@ function tmf_create_tables() {
         ma5 FLOAT NOT NULL DEFAULT 0,
         ma20 FLOAT NOT NULL DEFAULT 0,
         vol FLOAT NOT NULL DEFAULT 0,
+        snidan BIGINT NOT NULL DEFAULT 0,
+        big BIGINT NOT NULL DEFAULT 0,
+        bank BIGINT NOT NULL DEFAULT 0,
+        sinsoku BIGINT NOT NULL DEFAULT 0,
+        rate VARCHAR(16) NOT NULL DEFAULT '',
+        big_pred_rate VARCHAR(16) NOT NULL DEFAULT '',
+        big_pred BIGINT NOT NULL DEFAULT 0,
+        kaitori BIGINT NOT NULL DEFAULT 0,
+        realtime BIGINT NOT NULL DEFAULT 0,
+        teine BIGINT NOT NULL DEFAULT 0,
+        teine_kizu BIGINT NOT NULL DEFAULT 0,
+        diff_bigpred BIGINT NOT NULL DEFAULT 0,
+        diff_teine BIGINT NOT NULL DEFAULT 0,
+        profit VARCHAR(16) NOT NULL DEFAULT '',
+        note VARCHAR(191) NOT NULL DEFAULT '',
         image TEXT NULL,
         series TEXT NULL,
         forecast BIGINT NOT NULL DEFAULT 0,
@@ -149,12 +164,16 @@ function tmf_parse_csv($text) {
         if (trim($line) === '') continue;
         $cols = str_getcsv($line);
         if ($header === null) {
-            $header = array_map(function ($h) { return trim($h); }, $cols);
+            $header = array();
+            foreach ($cols as $i => $h) {
+                $h = trim($h);
+                // 空ヘッダーにも合成名を付与（先頭の品番列など）
+                $header[$i] = ($h === '') ? ('_col' . $i) : $h;
+            }
             continue;
         }
         $row = array();
         foreach ($header as $i => $key) {
-            if ($key === '') continue;
             $row[$key] = isset($cols[$i]) ? $cols[$i] : '';
         }
         $rows[] = $row;
@@ -241,34 +260,56 @@ function tmf_process_rows($rows) {
     $count = 0; $hist = 0;
 
     foreach ($rows as $row) {
+        // 品番：'品番' 列 → 先頭列(_col0/_col1) → 名前内の[コード]
         $name_raw = tmf_col($row, array('名前', '商品名', 'カード名', 'name'));
         $card_id  = tmf_col($row, array('card_id', 'カードID'));
-        if ($name_raw === '' && $card_id === '') continue;
-
-        $code = tmf_extract_code($name_raw, $card_id);
+        $code = tmf_col($row, array('品番', '_col0', '_col1'));
+        $code = trim($code);
+        if ($code === '' || !preg_match('#\d#', $code)) {
+            $code = tmf_extract_code($name_raw, $card_id);
+        }
         if ($code === '') continue;
+
+        // 名前（[コード]付きなら除去）
         $name = tmf_strip_code_from_name($name_raw);
         if ($name === '') $name = $name_raw;
+        if ($name === '') continue;
 
-        $grade = tmf_col($row, array('状態', 'グレード', 'grade'));
         $trend = tmf_col($row, array('傾向', 'trend'));
-        $price = tmf_to_int(tmf_col($row, array('最新価格', '買取価格', '価格', 'price')));
+
+        // 各社価格・指標
+        $snidan  = tmf_to_int(tmf_col($row, array('スニダン', 'snidan')));
+        $big     = tmf_to_int(tmf_col($row, array('BIG', 'big')));
+        $bank    = tmf_to_int(tmf_col($row, array('BANK', 'bank')));
+        $sinsoku = tmf_to_int(tmf_col($row, array('シンソク', 'sinsoku')));
+        $kaitori = tmf_to_int(tmf_col($row, array('買取表', 'kaitori')));
+        $big_pred = tmf_to_int(tmf_col($row, array('BIG予想値', 'big_pred')));
+
+        // 代表価格：買取表 → スニダン → BIG → 分析タブ最新価格
+        $price = tmf_to_int(tmf_col($row, array('最新価格')));
+        if ($price <= 0) $price = $kaitori;
+        if ($price <= 0) $price = $snidan;
+        if ($price <= 0) $price = $big;
+
         $pdate = tmf_col($row, array('最新日', '取得日時', 'price_date'));
         $pdate = tmf_normalize_date($pdate, $today);
 
         $series = tmf_parse_series(tmf_col($row, array('直近1週間', '直近', 'series')));
-        // 最新価格が空なら系列の末尾で補完
         if ($price <= 0 && !empty($series)) $price = end($series);
         if ($price <= 0) continue;
 
-        $image = '';
-        $ck = tmf_norm_code($code);
-        if (isset($images[$ck])) $image = $images[$ck];
+        // 画像：CSV列 or 画像マップ
+        $image = tmf_col($row, array('画像URL', '画像で確認', '画像', 'image'));
+        $image = esc_url_raw(trim($image));
+        if ($image === '') {
+            $ck = tmf_norm_code($code);
+            if (isset($images[$ck])) $image = $images[$ck];
+        }
 
         $data = array(
             'code'  => $code,
             'name'  => mb_substr($name, 0, 180),
-            'grade' => $grade,
+            'grade' => tmf_col($row, array('状態', 'グレード', 'grade')),
             'trend' => $trend,
             'price' => $price,
             'price_date' => $pdate,
@@ -278,6 +319,21 @@ function tmf_process_rows($rows) {
             'ma5'   => tmf_to_float(tmf_col($row, array('ma5'))),
             'ma20'  => tmf_to_float(tmf_col($row, array('ma20'))),
             'vol'   => tmf_to_float(tmf_col($row, array('変動%', 'vol'))),
+            'snidan'      => $snidan,
+            'big'         => $big,
+            'bank'        => $bank,
+            'sinsoku'     => $sinsoku,
+            'rate'          => mb_substr(tmf_col($row, array('利率', 'rate')), 0, 16),
+            'big_pred_rate' => mb_substr(tmf_col($row, array('BIG予想値利率', 'big_pred_rate')), 0, 16),
+            'big_pred'      => $big_pred,
+            'kaitori'       => $kaitori,
+            'realtime'      => tmf_to_int(tmf_col($row, array('リアルタイム満額', 'realtime'))),
+            'teine'         => tmf_to_int(tmf_col($row, array('底値', 'teine'))),
+            'teine_kizu'    => tmf_to_int(tmf_col($row, array('最底値(傷あり)', '最底値', 'teine_kizu'))),
+            'diff_bigpred'  => tmf_to_int(tmf_col($row, array('BIG予想値と買取表の差異', 'diff_bigpred'))),
+            'diff_teine'    => tmf_to_int(tmf_col($row, array('買取表と底値の差異', 'diff_teine'))),
+            'profit'        => mb_substr(tmf_col($row, array('利益率', 'profit')), 0, 16),
+            'note'          => mb_substr(tmf_col($row, array('備考', 'note')), 0, 180),
             'image' => $image,
             'series'=> implode(',', $series),
             'updated' => current_time('mysql'),
@@ -442,7 +498,10 @@ function tmf_get_cards($args = array()) {
     global $wpdb;
     $t = tmf_db_tables();
     $limit = isset($args['limit']) ? (int)$args['limit'] : 2000;
-    $sql = "SELECT code,name,grade,trend,price,price_date,d7,ma5,ma20,vol,image,series,forecast,forecast_dir,forecast_pct
+    $sql = "SELECT code,name,grade,trend,price,price_date,d7,ma5,ma20,vol,
+                   snidan,big,bank,sinsoku,rate,big_pred_rate,big_pred,kaitori,realtime,
+                   teine,teine_kizu,diff_bigpred,diff_teine,profit,note,
+                   image,series,forecast,forecast_dir,forecast_pct
             FROM {$t['cards']} ORDER BY price DESC LIMIT %d";
     return $wpdb->get_results($wpdb->prepare($sql, $limit));
 }
@@ -615,7 +674,7 @@ function tmf_admin_page() {
         <p>Googleの共有設定なしで、すぐに相場ページを表示できます。下の2つを順に押すだけ。</p>
         <form method="post" style="display:flex;gap:14px;flex-wrap:wrap;align-items:center">
             <?php wp_nonce_field('tmf_actions'); ?>
-            <button type="submit" name="tmf_seed" class="button button-primary button-hero">① 同梱データを取り込む（117件）</button>
+            <button type="submit" name="tmf_seed" class="button button-primary button-hero">① 同梱データを取り込む（総合価格表）</button>
             <button type="submit" name="tmf_make_page" class="button button-hero">② 相場検索ページを自動作成</button>
         </form>
         <p class="description">※「同梱データ」は現時点のPSA10相場スナップショットです。以降は下の自動取込で最新化・履歴蓄積できます。</p>

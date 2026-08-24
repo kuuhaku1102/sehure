@@ -596,7 +596,17 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
   border-radius: var(--radius); border: 1px solid var(--line); overflow: hidden;
   background: var(--panel); backdrop-filter: blur(10px);
 }
+.tmf-souba__scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
 .tmf-souba__table { width: 100%; border-collapse: collapse; }
+.tmf-souba__table--wide { min-width: 1080px; }
+.tmf-souba__table--wide td.num { text-align: right; white-space: nowrap; font-family: var(--font-head); font-size: 13px; font-variant-numeric: tabular-nums; }
+.tmf-souba__table--wide th { white-space: nowrap; }
+.tmf-souba__table td.muted { color: var(--muted); }
+.tmf-souba__table td.pos { color: #7ee0a6; }
+.tmf-souba__table td.neg { color: #ff8a8a; }
+.col-kaitori { background: rgba(255,207,92,.06); }
+.col-kaitori .tmf-souba__price { color: var(--gold); }
+thead .col-kaitori { color: var(--gold); }
 .tmf-souba__table thead th {
   text-align: left; font-family: var(--font-head); font-size: 12px; letter-spacing: .06em;
   color: var(--muted); padding: 14px 16px; border-bottom: 1px solid var(--line);
@@ -645,13 +655,9 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
 
 @media (max-width: 760px) {
   .tmf-souba__controls { position: static; }
-  .tmf-souba__table thead { display: none; }
-  .tmf-souba__table, .tmf-souba__table tbody, .tmf-souba__row, .tmf-souba__table td { display: block; width: 100%; }
-  .tmf-souba__row { padding: 12px 6px; position: relative; }
-  .tmf-souba__table td { padding: 6px 12px; border: none; }
-  .col-chart { display: none !important; }
-  .col-price, .col-fc { display: inline-block; width: auto; }
-  .col-fc::before { content: "予想: "; color: var(--muted); font-size: 12px; }
+  /* 総合価格表は横スクロールで全列維持 */
+  .tmf-souba__table--wide thead th { position: static; top: auto; }
+  .tmf-souba__table--wide td.num { font-size: 12px; }
 }
 
 /* ============================================================

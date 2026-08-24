@@ -299,6 +299,15 @@ function tmf_customize_register($wp_customize) {
         'label'       => 'OGP画像（SNSシェア画像）',
         'section'     => 'tmf_seo',
     )));
+
+    // noindex 設定（デフォルト：サイト全体を検索エンジンに登録しない）
+    $wp_customize->add_setting('tmf_noindex', array('default' => 1, 'sanitize_callback' => 'absint'));
+    $wp_customize->add_control('tmf_noindex', array(
+        'label'       => 'サイト全体を noindex にする（検索エンジンに登録しない）',
+        'description' => 'ONの間はGoogle等にインデックスされません。公開して集客したくなったらOFFにしてください。',
+        'section'     => 'tmf_seo',
+        'type'        => 'checkbox',
+    ));
 }
 add_action('customize_register', 'tmf_customize_register');
 
@@ -355,6 +364,34 @@ function tmf_seo_meta() {
     echo "<!-- /TMF SEO -->\n";
 }
 add_action('wp_head', 'tmf_seo_meta', 5);
+
+/**
+ * noindex 出力
+ * - カスタマイザーで「サイト全体を noindex」がON（既定）の間は全ページ
+ * - 相場検索ページは競合価格等を含むため常に noindex
+ */
+function tmf_noindex_meta() {
+    $noindex = (int) tmf_opt('tmf_noindex', 1);
+    if (!$noindex && is_page_template('page-souba.php')) {
+        $noindex = 1; // 相場ページは常にnoindex
+    }
+    if ($noindex) {
+        echo '<meta name="robots" content="noindex,nofollow">' . "\n";
+    }
+}
+add_action('wp_head', 'tmf_noindex_meta', 1);
+
+// wp_robots フィルタ（WP 5.7+）にも反映
+add_filter('wp_robots', function ($robots) {
+    $noindex = (int) tmf_opt('tmf_noindex', 1);
+    if (!$noindex && is_page_template('page-souba.php')) { $noindex = 1; }
+    if ($noindex) {
+        $robots['noindex'] = true;
+        $robots['nofollow'] = true;
+        unset($robots['max-image-preview']);
+    }
+    return $robots;
+});
 
 /**
  * LocalBusiness（Store）構造化データ ― ローカルSEOの要
