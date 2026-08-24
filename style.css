@@ -601,14 +601,33 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
 .tmf-souba__table--wide { min-width: 1240px; }
 .tmf-souba__table td { line-height: 1.5; }
 .tmf-souba__table thead th.col-trend, .tmf-souba__table thead th.col-fc, .tmf-souba__table thead th.col-chart { white-space: nowrap; }
-.tmf-souba__table--wide td.num { text-align: right; white-space: nowrap; font-family: var(--font-head); font-size: 13px; font-variant-numeric: tabular-nums; }
-.tmf-souba__table--wide th { white-space: nowrap; }
-.tmf-souba__table td.muted { color: var(--muted); }
+.tmf-souba__table--wide td.num { text-align: right; white-space: nowrap; font-family: var(--font-head); font-size: 13px; font-variant-numeric: tabular-nums; color: #d7ccd0; }
+.tmf-souba__table--wide th { white-space: nowrap; text-align: right; }
+.tmf-souba__table--wide th.col-card, .tmf-souba__table--wide th.col-trend, .tmf-souba__table--wide th.col-chart, .tmf-souba__table--wide th.col-fc, .tmf-souba__table--wide th.col-kaitori { text-align: left; }
+.tmf-souba__table td.muted { color: rgba(183,167,171,.5); }
 .tmf-souba__table td.pos { color: #7ee0a6; }
 .tmf-souba__table td.neg { color: #ff8a8a; }
-.col-kaitori { background: rgba(255,207,92,.06); }
+
+/* ゼブラ縞＋ホバーで行を追いやすく */
+.tmf-souba__row:nth-child(even) td { background: rgba(255,255,255,.022); }
+.tmf-souba__row:hover td { background: rgba(255,59,71,.06); }
+
+/* カード列を左固定：横スクロールしても名前が常に見える */
+.tmf-souba__table--wide td.col-card,
+.tmf-souba__table--wide th.col-card {
+  position: sticky; left: 0; z-index: 2;
+  background: #120c10; box-shadow: 1px 0 0 rgba(255,90,90,.18);
+}
+.tmf-souba__table--wide thead th.col-card { z-index: 3; background: #171014; }
+.tmf-souba__row:nth-child(even) td.col-card { background: #160f13; }
+.tmf-souba__row:hover td.col-card { background: #1e1319; }
+
+/* 買取表列を強調 */
+.col-kaitori { background: rgba(255,207,92,.07); }
+.tmf-souba__row:nth-child(even) td.col-kaitori { background: rgba(255,207,92,.05); }
+.tmf-souba__row:hover td.col-kaitori { background: rgba(255,207,92,.12); }
 .col-kaitori .tmf-souba__price { color: var(--gold); }
-thead .col-kaitori { color: var(--gold); }
+thead th.col-kaitori { color: var(--gold); }
 .tmf-souba__table thead th {
   text-align: left; font-family: var(--font-head); font-size: 12px; letter-spacing: .06em;
   color: var(--muted); padding: 14px 16px; border-bottom: 1px solid var(--line);

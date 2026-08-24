@@ -117,6 +117,12 @@ function tmf_maybe_seed() {
     }
 }
 add_action('admin_init', 'tmf_maybe_seed', 20);
+// 相場ページ表示時にも自動取込（管理画面を開かなくても最新化される）
+add_action('template_redirect', function () {
+    if (function_exists('is_page_template') && is_page_template('page-souba.php')) {
+        tmf_maybe_seed();
+    }
+});
 
 /**
  * 必須カラムを確実に用意（dbDeltaが取りこぼしてもALTERで補完）
