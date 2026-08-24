@@ -208,6 +208,31 @@ function tmf_import_prices($manual = false) {
     if (empty($rows)) {
         return array('ok' => false, 'msg' => '行を取得できませんでした。');
     }
+    return tmf_process_rows($rows);
+}
+
+/**
+ * 同梱CSV（inc/seed-prices.csv）から取り込む（Google共有設定なしで動作）
+ */
+function tmf_import_seed() {
+    $path = get_template_directory() . '/inc/seed-prices.csv';
+    if (!file_exists($path)) {
+        return array('ok' => false, 'msg' => '同梱データ（inc/seed-prices.csv）が見つかりません。');
+    }
+    $body = file_get_contents($path);
+    $rows = tmf_parse_csv($body);
+    if (empty($rows)) {
+        return array('ok' => false, 'msg' => '同梱データが空です。');
+    }
+    return tmf_process_rows($rows);
+}
+
+/**
+ * 行データ（連想配列の配列）をDBへ反映（URL取込・同梱取込 共通）
+ */
+function tmf_process_rows($rows) {
+    global $wpdb;
+    $t = tmf_db_tables();
 
     // 画像CSV（任意）
     $images = tmf_fetch_image_map();
@@ -448,6 +473,35 @@ function tmf_get_history($code, $limit = 120) {
     ));
 }
 
+/**
+ * 相場検索ページを自動作成（無ければ作る）。作成/既存のページIDを返す
+ */
+function tmf_ensure_souba_page() {
+    $existing = get_posts(array(
+        'post_type'   => 'page',
+        'numberposts' => 1,
+        'meta_key'    => '_wp_page_template',
+        'meta_value'  => 'page-souba.php',
+        'fields'      => 'ids',
+        'post_status' => 'any',
+    ));
+    if (!empty($existing)) return (int)$existing[0];
+
+    $id = wp_insert_post(array(
+        'post_title'   => '相場検索',
+        'post_name'    => 'souba',
+        'post_status'  => 'publish',
+        'post_type'    => 'page',
+        'post_content' => '',
+    ));
+    if ($id && !is_wp_error($id)) {
+        update_post_meta($id, '_wp_page_template', 'page-souba.php');
+        wp_cache_delete('tmf_souba_page');
+        return (int)$id;
+    }
+    return 0;
+}
+
 /* ============================================================
  * AJAX：カード履歴（グラフ用）
  * ========================================================== */
@@ -480,11 +534,24 @@ add_action('admin_init', 'tmf_admin_register');
 function tmf_admin_page() {
     if (!current_user_can('manage_options')) return;
 
-    // 手動取込
+    // アクション処理
     $notice = '';
-    if (isset($_POST['tmf_import']) && check_admin_referer('tmf_import_now')) {
+    if (isset($_POST['tmf_import']) && check_admin_referer('tmf_actions')) {
         $r = tmf_import_prices(true);
-        $notice = '<div class="notice ' . ($r['ok'] ? 'notice-success' : 'notice-error') . '"><p>' . esc_html($r['msg']) . '</p></div>';
+        $notice .= '<div class="notice ' . ($r['ok'] ? 'notice-success' : 'notice-error') . '"><p>' . esc_html($r['msg']) . '</p></div>';
+    }
+    if (isset($_POST['tmf_seed']) && check_admin_referer('tmf_actions')) {
+        $r = tmf_import_seed();
+        if ($r['ok']) { update_option('tmf_last_import', current_time('mysql')); }
+        $notice .= '<div class="notice ' . ($r['ok'] ? 'notice-success' : 'notice-error') . '"><p>同梱データ取込：' . esc_html($r['msg']) . '</p></div>';
+    }
+    if (isset($_POST['tmf_make_page']) && check_admin_referer('tmf_actions')) {
+        $pid = tmf_ensure_souba_page();
+        if ($pid) {
+            $notice .= '<div class="notice notice-success"><p>相場検索ページを用意しました → <a href="' . esc_url(get_permalink($pid)) . '" target="_blank">ページを表示</a> ／ <a href="' . esc_url(get_edit_post_link($pid)) . '">編集</a></p></div>';
+        } else {
+            $notice .= '<div class="notice notice-error"><p>ページ作成に失敗しました。</p></div>';
+        }
     }
 
     global $wpdb;
@@ -544,20 +611,26 @@ function tmf_admin_page() {
         </form>
 
         <hr>
-        <h2>手動取込</h2>
-        <p>設定保存後、下のボタンで今すぐ取り込めます（自動でも毎日1回取り込みます）。</p>
-        <form method="post">
-            <?php wp_nonce_field('tmf_import_now'); ?>
-            <button type="submit" name="tmf_import" class="button button-primary button-hero">▶ 今すぐ取り込む</button>
+        <h2>かんたんスタート（まずはこれ）</h2>
+        <p>Googleの共有設定なしで、すぐに相場ページを表示できます。下の2つを順に押すだけ。</p>
+        <form method="post" style="display:flex;gap:14px;flex-wrap:wrap;align-items:center">
+            <?php wp_nonce_field('tmf_actions'); ?>
+            <button type="submit" name="tmf_seed" class="button button-primary button-hero">① 同梱データを取り込む（117件）</button>
+            <button type="submit" name="tmf_make_page" class="button button-hero">② 相場検索ページを自動作成</button>
         </form>
+        <p class="description">※「同梱データ」は現時点のPSA10相場スナップショットです。以降は下の自動取込で最新化・履歴蓄積できます。</p>
 
         <hr>
-        <h2>相場ページの作り方</h2>
-        <ol>
-            <li><b>固定ページ→新規追加</b>でページを作成（例：タイトル「相場検索」）</li>
-            <li>右側「ページ属性 → テンプレート」で <b>「相場検索ページ」</b> を選択</li>
-            <li>公開（社内用にしたい場合は「表示状態」をパスワード保護/非公開に）</li>
-        </ol>
+        <h2>自動更新（任意・最新データを毎日取り込む）</h2>
+        <p>上の「価格CSV URL」を設定すると、下のボタンや毎日の自動処理で最新データを取り込み、履歴を蓄積します。</p>
+        <form method="post">
+            <?php wp_nonce_field('tmf_actions'); ?>
+            <button type="submit" name="tmf_import" class="button button-secondary button-hero">▶ URLから今すぐ取り込む</button>
+        </form>
+        <p class="description">
+            ヒント：CSV取得で「HTMLが返されました」と出る場合は、Googleスプレッドシートが非公開です。<br>
+            スプレッドシート右上「共有」→「一般的なアクセス」を<b>「リンクを知っている全員」→「閲覧者」</b>にしてください。
+        </p>
     </div>
     <?php
 }
