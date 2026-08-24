@@ -12,6 +12,8 @@
 if (!defined('ABSPATH')) { exit; }
 
 define('TMF_DB_VERSION', '1.2.0');
+// 同梱シードの版。変更すると管理画面表示時に自動で取り込み直す
+define('TMF_SEED_VERSION', '2026-08-24-merged-241');
 
 /* ============================================================
  * テーブル作成
@@ -96,6 +98,25 @@ function tmf_maybe_upgrade_db() {
 }
 add_action('admin_init', 'tmf_maybe_upgrade_db');
 add_action('after_switch_theme', function () { tmf_create_tables(); tmf_ensure_columns(); });
+
+/**
+ * 同梱シードの自動取り込み（版が変わったら1回だけ）。
+ * 管理画面を開いた時に実行。手動CSV URL運用中は上書きしない。
+ */
+function tmf_maybe_seed() {
+    if (get_option('tmf_seed_version') === TMF_SEED_VERSION) return;
+    // 独自CSV URLを設定して運用している場合は自動シードで上書きしない
+    if (trim((string) get_option('tmf_csv_url')) !== '') {
+        update_option('tmf_seed_version', TMF_SEED_VERSION);
+        return;
+    }
+    $r = tmf_import_seed();
+    if (!empty($r['ok'])) {
+        update_option('tmf_seed_version', TMF_SEED_VERSION);
+        update_option('tmf_last_import', current_time('mysql'));
+    }
+}
+add_action('admin_init', 'tmf_maybe_seed', 20);
 
 /**
  * 必須カラムを確実に用意（dbDeltaが取りこぼしてもALTERで補完）
@@ -726,7 +747,7 @@ function tmf_admin_page() {
         <p>Googleの共有設定なしで、すぐに相場ページを表示できます。下の2つを順に押すだけ。</p>
         <form method="post" style="display:flex;gap:14px;flex-wrap:wrap;align-items:center">
             <?php wp_nonce_field('tmf_actions'); ?>
-            <button type="submit" name="tmf_seed" class="button button-primary button-hero">① 同梱データを取り込む（PSA10買取比較・87件）</button>
+            <button type="submit" name="tmf_seed" class="button button-primary button-hero">① 同梱データを取り込む（PSA10・241件）</button>
             <button type="submit" name="tmf_make_page" class="button button-hero">② 相場検索ページを自動作成</button>
         </form>
         <p class="description">※「同梱データ」は現時点のPSA10相場スナップショットです。以降は下の自動取込で最新化・履歴蓄積できます。</p>
