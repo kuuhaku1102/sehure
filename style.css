@@ -558,6 +558,103 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
 .tmf-section__head { margin-bottom: 46px; }
 
 /* ============================================================
+   16.5 相場検索ページ
+   ========================================================== */
+.tmf-souba__controls {
+  display: flex; flex-wrap: wrap; gap: 14px; align-items: center;
+  margin: 10px 0 14px; position: sticky; top: 76px; z-index: 20;
+  padding: 14px; border-radius: var(--radius);
+  background: rgba(10,8,12,.82); backdrop-filter: blur(14px); border: 1px solid var(--line);
+}
+.tmf-souba__search { position: relative; flex: 1 1 320px; }
+.tmf-souba__search-icon { position: absolute; left: 16px; top: 50%; transform: translateY(-50%); opacity: .7; }
+.tmf-souba__search input {
+  width: 100%; padding: 14px 16px 14px 44px; border-radius: 999px;
+  background: var(--panel); border: 1px solid var(--line); color: var(--text); font-size: 15px;
+  transition: border-color .25s var(--ease), box-shadow .25s;
+}
+.tmf-souba__search input:focus { outline: none; border-color: var(--cyan); box-shadow: var(--glow-cyan); }
+
+.tmf-souba__filters { display: flex; gap: 8px; flex-wrap: wrap; }
+.tmf-chip {
+  padding: 9px 16px; border-radius: 999px; border: 1px solid var(--line);
+  background: var(--panel); color: var(--muted); font-size: 13px; font-weight: 700;
+  transition: color .2s, border-color .2s, background .2s, transform .2s;
+}
+.tmf-chip:hover { transform: translateY(-2px); color: var(--text); }
+.tmf-chip.is-active { color: #120a0c; background: var(--grad); border-color: transparent; box-shadow: var(--glow-cyan); }
+
+.tmf-souba__sort {
+  padding: 12px 16px; border-radius: 999px; background: var(--panel); color: var(--text);
+  border: 1px solid var(--line); font-size: 14px; cursor: pointer;
+}
+.tmf-souba__sort:focus { outline: none; border-color: var(--cyan); }
+.tmf-souba__count { color: var(--muted); font-size: 13px; margin: 0 0 14px 6px; }
+.tmf-souba__count span { color: var(--cyan); font-weight: 700; }
+
+.tmf-souba__table-wrap {
+  border-radius: var(--radius); border: 1px solid var(--line); overflow: hidden;
+  background: var(--panel); backdrop-filter: blur(10px);
+}
+.tmf-souba__table { width: 100%; border-collapse: collapse; }
+.tmf-souba__table thead th {
+  text-align: left; font-family: var(--font-head); font-size: 12px; letter-spacing: .06em;
+  color: var(--muted); padding: 14px 16px; border-bottom: 1px solid var(--line);
+  background: rgba(255,255,255,.02); position: sticky; top: 150px; z-index: 5;
+}
+.tmf-souba__table thead th small { font-weight: 400; opacity: .7; }
+.tmf-souba__row { border-bottom: 1px solid rgba(255,255,255,.05); transition: background .2s; }
+.tmf-souba__row:hover { background: rgba(255,59,71,.05); }
+.tmf-souba__table td { padding: 12px 16px; vertical-align: middle; }
+.col-card { cursor: pointer; min-width: 220px; }
+.col-price, .col-fc { white-space: nowrap; }
+
+.tmf-souba__card { display: flex; align-items: center; gap: 12px; }
+.tmf-souba__thumb {
+  width: 42px; height: 58px; border-radius: 8px; overflow: hidden; flex-shrink: 0;
+  background: linear-gradient(150deg, #1a1015, #241820); display: grid; place-items: center;
+  border: 1px solid var(--line);
+}
+.tmf-souba__thumb img { width: 100%; height: 100%; object-fit: cover; }
+.tmf-souba__thumb span { color: rgba(255,255,255,.25); }
+.tmf-souba__name { display: block; font-weight: 700; font-size: 15px; line-height: 1.4; }
+.tmf-souba__meta { display: block; font-size: 12px; color: var(--muted); font-family: var(--font-head); }
+.tmf-souba__price { font-family: var(--font-head); font-weight: 700; font-size: 17px; }
+
+.tmf-badge { display: inline-block; padding: 3px 10px; border-radius: 999px; font-size: 11px; font-weight: 700; }
+.tmf-badge--up { color: #ff8a8a; background: rgba(255,59,71,.15); border: 1px solid rgba(255,59,71,.4); }
+.tmf-badge--down { color: #8fd8ff; background: rgba(67,198,255,.12); border: 1px solid rgba(67,198,255,.4); }
+.tmf-badge--flat { color: var(--gold); background: rgba(255,207,92,.12); border: 1px solid rgba(255,207,92,.35); }
+.tmf-souba__delta { display: block; font-size: 12px; margin-top: 4px; font-family: var(--font-head); }
+.tmf-souba__delta.up { color: #ff7a7a; }
+.tmf-souba__delta.down { color: #6cc6ff; }
+
+.tmf-spark { display: block; }
+.tmf-souba__fc { font-family: var(--font-head); font-weight: 700; font-size: 16px; display: block; }
+.tmf-souba__fcpct { font-size: 12px; font-family: var(--font-head); }
+.tmf-souba__fc--up { color: #ff6b6b; }
+.tmf-souba__fc--down { color: #57bdff; }
+.tmf-souba__fc--flat { color: var(--gold); }
+
+.tmf-souba__detail-inner { padding: 20px 8px; }
+.tmf-bigchart { width: 100%; max-width: 100%; display: block; }
+.tmf-souba__loading { color: var(--muted); font-size: 13px; text-align: center; padding: 20px; }
+.tmf-souba__empty { text-align: center; color: var(--muted); padding: 40px; }
+.tmf-souba__note { color: var(--muted); font-size: 12px; margin-top: 18px; line-height: 1.8; }
+.tmf-souba__note a { color: var(--cyan); text-decoration: underline; }
+
+@media (max-width: 760px) {
+  .tmf-souba__controls { position: static; }
+  .tmf-souba__table thead { display: none; }
+  .tmf-souba__table, .tmf-souba__table tbody, .tmf-souba__row, .tmf-souba__table td { display: block; width: 100%; }
+  .tmf-souba__row { padding: 12px 6px; position: relative; }
+  .tmf-souba__table td { padding: 6px 12px; border: none; }
+  .col-chart { display: none !important; }
+  .col-price, .col-fc { display: inline-block; width: auto; }
+  .col-fc::before { content: "予想: "; color: var(--muted); font-size: 12px; }
+}
+
+/* ============================================================
    17. レスポンシブ
    ========================================================== */
 @media (max-width: 980px) {

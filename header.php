@@ -51,6 +51,9 @@
           echo '<li><a href="' . esc_url(home_url('/#category')) . '">買取カテゴリー</a></li>';
           echo '<li><a href="' . esc_url(home_url('/#kaitori')) . '">強化買取</a></li>';
           echo '<li><a href="' . esc_url(home_url('/#flow')) . '">買取の流れ</a></li>';
+          if (function_exists('tmf_souba_url') && ($su = tmf_souba_url())) {
+              echo '<li><a href="' . esc_url($su) . '">相場検索</a></li>';
+          }
           echo '<li><a href="' . esc_url(home_url('/#news')) . '">お知らせ</a></li>';
           echo '<li><a href="' . esc_url(home_url('/#access')) . '">店舗情報</a></li>';
           echo '</ul>';

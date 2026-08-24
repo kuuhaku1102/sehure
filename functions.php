@@ -16,6 +16,9 @@ if (!defined('ABSPATH')) { exit; }
 
 define('TMF_VERSION', '1.0.0');
 
+/** 相場トラッカー（CSV取込・履歴蓄積・相場予想） */
+require_once get_template_directory() . '/inc/price-tracker.php';
+
 /* ============================================================
  * 1. テーマ基本セットアップ
  * ========================================================== */
@@ -58,6 +61,12 @@ function tmf_assets() {
 
     // メインスクリプト
     wp_enqueue_script('tmf-main', get_template_directory_uri() . '/assets/js/main.js', array(), TMF_VERSION, true);
+
+    // 相場検索ページ専用
+    if (is_page_template('page-souba.php')) {
+        wp_enqueue_script('tmf-souba', get_template_directory_uri() . '/assets/js/souba.js', array(), TMF_VERSION, true);
+        wp_localize_script('tmf-souba', 'TMF_SOUBA', array('ajax' => admin_url('admin-ajax.php')));
+    }
 
     if (is_singular() && comments_open() && get_option('thread_comments')) {
         wp_enqueue_script('comment-reply');
