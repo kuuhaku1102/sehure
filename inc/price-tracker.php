@@ -13,7 +13,7 @@ if (!defined('ABSPATH')) { exit; }
 
 define('TMF_DB_VERSION', '1.2.0');
 // 同梱シードの版。変更すると管理画面表示時に自動で取り込み直す
-define('TMF_SEED_VERSION', '2026-08-24-merged-241');
+define('TMF_SEED_VERSION', '2026-08-24-all-275');
 
 /* ============================================================
  * テーブル作成
@@ -110,17 +110,25 @@ function tmf_maybe_seed() {
         update_option('tmf_seed_version', TMF_SEED_VERSION);
         return;
     }
+    // ★重い取込はバックグラウンド(WP-Cron)へ。現在のリクエストはブロックしない
+    if (!wp_next_scheduled('tmf_seed_now')) {
+        wp_schedule_single_event(time() + 1, 'tmf_seed_now');
+    }
+}
+add_action('admin_init', 'tmf_maybe_seed', 20);
+// 相場ページ表示時にも（バックグラウンド予約のみ・ページはブロックしない）
+add_action('template_redirect', function () {
+    if (function_exists('is_page_template') && is_page_template('page-souba.php')) {
+        tmf_maybe_seed();
+    }
+});
+// バックグラウンドで同梱データを取込
+add_action('tmf_seed_now', function () {
+    if (get_option('tmf_seed_version') === TMF_SEED_VERSION) return;
     $r = tmf_import_seed();
     if (!empty($r['ok'])) {
         update_option('tmf_seed_version', TMF_SEED_VERSION);
         update_option('tmf_last_import', current_time('mysql'));
-    }
-}
-add_action('admin_init', 'tmf_maybe_seed', 20);
-// 相場ページ表示時にも自動取込（管理画面を開かなくても最新化される）
-add_action('template_redirect', function () {
-    if (function_exists('is_page_template') && is_page_template('page-souba.php')) {
-        tmf_maybe_seed();
     }
 });
 
@@ -373,7 +381,8 @@ function tmf_process_rows($rows) {
 
         $series = tmf_parse_series(tmf_col($row, array('直近1週間', '直近', 'series')));
         if ($price <= 0 && !empty($series)) $price = end($series);
-        if ($price <= 0) continue;
+        if ($price < 0) $price = 0;
+        // 価格が空(0)でもカード自体は登録する（各列は「—」表示）
 
         // 画像：CSV列 or 画像マップ
         $image = tmf_col($row, array('画像URL', '画像で確認', '画像', 'image'));
@@ -441,15 +450,15 @@ function tmf_process_rows($rows) {
                 $hist++;
             }
         }
-        // 当日スナップショット
-        $ins = $wpdb->query($wpdb->prepare(
-            "INSERT IGNORE INTO {$t['history']} (code, price, captured_on) VALUES (%s, %d, %s)",
-            $code, $price, $pdate
-        ));
-        if ($ins) $hist++;
-
-        // 予想を更新
-        tmf_update_forecast($code);
+        // 当日スナップショット＆予想（価格があるときのみ）
+        if ($price > 0) {
+            $ins = $wpdb->query($wpdb->prepare(
+                "INSERT IGNORE INTO {$t['history']} (code, price, captured_on) VALUES (%s, %d, %s)",
+                $code, $price, $pdate
+            ));
+            if ($ins) $hist++;
+            tmf_update_forecast($code);
+        }
     }
 
     update_option('tmf_last_import', current_time('mysql'));
@@ -753,7 +762,7 @@ function tmf_admin_page() {
         <p>Googleの共有設定なしで、すぐに相場ページを表示できます。下の2つを順に押すだけ。</p>
         <form method="post" style="display:flex;gap:14px;flex-wrap:wrap;align-items:center">
             <?php wp_nonce_field('tmf_actions'); ?>
-            <button type="submit" name="tmf_seed" class="button button-primary button-hero">① 同梱データを取り込む（PSA10・241件）</button>
+            <button type="submit" name="tmf_seed" class="button button-primary button-hero">① 同梱データを取り込む（PSA10・275件）</button>
             <button type="submit" name="tmf_make_page" class="button button-hero">② 相場検索ページを自動作成</button>
         </form>
         <p class="description">※「同梱データ」は現時点のPSA10相場スナップショットです。以降は下の自動取込で最新化・履歴蓄積できます。</p>
