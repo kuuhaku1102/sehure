@@ -598,7 +598,7 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
 }
 .tmf-souba__scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
 .tmf-souba__table { width: 100%; border-collapse: collapse; }
-.tmf-souba__table--wide { min-width: 720px; }
+.tmf-souba__table--wide { min-width: 1240px; }
 .tmf-souba__table td { line-height: 1.5; }
 .tmf-souba__table thead th.col-trend, .tmf-souba__table thead th.col-fc, .tmf-souba__table thead th.col-chart { white-space: nowrap; }
 .tmf-souba__table--wide td.num { text-align: right; white-space: nowrap; font-family: var(--font-head); font-size: 13px; font-variant-numeric: tabular-nums; }

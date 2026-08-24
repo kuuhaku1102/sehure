@@ -285,14 +285,12 @@ function tmf_process_rows($rows) {
         $sinsoku = tmf_to_int(tmf_col($row, array('シンソク', 'sinsoku')));
         $kaitori = tmf_to_int(tmf_col($row, array('買取表', 'kaitori')));
         $big_pred = tmf_to_int(tmf_col($row, array('BIG予想値', 'big_pred')));
-        $psa_price = tmf_to_int(tmf_col($row, array('PSA10相場', 'PSA10直近5件平均', 'PSA10平均')));
-        $psa_min   = tmf_to_int(tmf_col($row, array('PSA10最安', 'PSA10最安出品')));
+        $psa_min = tmf_to_int(tmf_col($row, array('PSA10最安', 'PSA10最安出品')));
 
-        // 代表価格：PSA10相場 → PSA10最安 → 最新価格 → 買取表
-        $price = $psa_price;
-        if ($price <= 0) $price = $psa_min;
-        if ($price <= 0) $price = tmf_to_int(tmf_col($row, array('最新価格')));
+        // 代表価格（相場ベース・履歴/予想の基準）：スニダン → 買取表 → BIG
+        $price = $snidan;
         if ($price <= 0) $price = $kaitori;
+        if ($price <= 0) $price = $big;
 
         $pdate = tmf_col($row, array('最新日', '取得日時', 'price_date'));
         $pdate = tmf_normalize_date($pdate, $today);
@@ -433,44 +431,37 @@ function tmf_update_forecast($code) {
         "SELECT price, captured_on FROM {$t['history']} WHERE code=%s ORDER BY captured_on ASC", $code
     ));
     $points = array();
-    foreach ($hist as $h) { $points[] = (float)$h->price; }
-    if (count($points) < 3 && $card->series) {
-        $points = array_map('floatval', array_filter(explode(',', $card->series)));
+    foreach ($hist as $h) { if ((float)$h->price > 0) $points[] = (float)$h->price; }
+    // 実履歴が乏しければ PSA10 の7日推移（psa10のみ格納）で補完
+    if (count($points) < 5 && $card->series) {
+        $s = array_values(array_filter(array_map('floatval', explode(',', $card->series))));
+        if (count($s) > count($points)) $points = $s;
     }
 
-    $horizon = (int)get_option('tmf_forecast_days', 30);
-    $last = (float)$card->price;
-    $forecast = $last;
-
+    $horizon = (int) get_option('tmf_forecast_days', 30);
+    $last = (float) $card->price;
     $n = count($points);
-    if ($n >= 3) {
-        // 線形回帰 y = a + b x
-        $sx = $sy = $sxx = $sxy = 0;
-        foreach ($points as $i => $y) {
-            $x = $i;
-            $sx += $x; $sy += $y; $sxx += $x * $x; $sxy += $x * $y;
-        }
-        $denom = ($n * $sxx - $sx * $sx);
-        $b = $denom != 0 ? ($n * $sxy - $sx * $sy) / $denom : 0;
-        // 直近価格からhorizon日先を外挿（1点=1日相当）
-        $forecast = $last + $b * $horizon;
-    } else {
-        // データ不足：傾向で微調整
-        $bias = array('上昇' => 0.05, '下落' => -0.05);
-        $forecast = $last * (1 + (isset($bias[$card->trend]) ? $bias[$card->trend] : 0));
+
+    // 実データが5点未満、または価格不明なら予想しない（＝データ蓄積中）
+    if ($n < 5 || $last <= 0) {
+        $wpdb->update($t['cards'], array('forecast' => 0, 'forecast_dir' => '', 'forecast_pct' => 0), array('id' => $card->id));
+        return;
     }
 
-    // 移動平均クロスの補正（ma5>ma20で上向き、逆で下向き）
-    if ($card->ma5 > 0 && $card->ma20 > 0) {
-        $cross = ($card->ma5 - $card->ma20) / max($card->ma20, 1);
-        $forecast *= (1 + max(-0.15, min(0.15, $cross * 0.5)));
-    }
+    // 直近最大14点で線形回帰の傾き（円/点）→ 1点≒1日として horizon 日先を外挿
+    $win = array_slice($points, -14);
+    $m = count($win);
+    $sx = $sy = $sxx = $sxy = 0;
+    foreach ($win as $i => $y) { $sx += $i; $sy += $y; $sxx += $i * $i; $sxy += $i * $y; }
+    $denom = ($m * $sxx - $sx * $sx);
+    $slope = $denom != 0 ? ($m * $sxy - $sx * $sy) / $denom : 0;
 
-    // 現実的な範囲にクランプ（±60%）
-    $forecast = max($last * 0.4, min($last * 1.6, $forecast));
-    $forecast = (int)round($forecast);
+    $proj_pct = ($slope * $horizon) / max($last, 1);
+    // 外挿は暴れやすいので ±25% を上限にクランプ（非現実的な予想を防ぐ）
+    $proj_pct = max(-0.25, min(0.25, $proj_pct));
 
-    $pct = $last > 0 ? round((($forecast - $last) / $last) * 100, 1) : 0;
+    $forecast = (int) round($last * (1 + $proj_pct));
+    $pct = round((($forecast - $last) / $last) * 100, 1);
     $dir = $pct > 1.5 ? 'up' : ($pct < -1.5 ? 'down' : 'flat');
 
     $wpdb->update($t['cards'], array(
@@ -503,7 +494,8 @@ function tmf_get_cards($args = array()) {
     $t = tmf_db_tables();
     $limit = isset($args['limit']) ? (int)$args['limit'] : 2000;
     $sql = "SELECT code,name,grade,trend,price,price_date,d7,ma5,ma20,vol,
-                   psa_min,kaitori,
+                   snidan,big,bank,sinsoku,rate,big_pred_rate,big_pred,kaitori,realtime,
+                   teine,teine_kizu,diff_bigpred,diff_teine,profit,note,psa_min,
                    image,series,forecast,forecast_dir,forecast_pct
             FROM {$t['cards']} ORDER BY price DESC LIMIT %d";
     return $wpdb->get_results($wpdb->prepare($sql, $limit));
@@ -677,7 +669,7 @@ function tmf_admin_page() {
         <p>Googleの共有設定なしで、すぐに相場ページを表示できます。下の2つを順に押すだけ。</p>
         <form method="post" style="display:flex;gap:14px;flex-wrap:wrap;align-items:center">
             <?php wp_nonce_field('tmf_actions'); ?>
-            <button type="submit" name="tmf_seed" class="button button-primary button-hero">① 同梱データを取り込む（PSA10相場・240件）</button>
+            <button type="submit" name="tmf_seed" class="button button-primary button-hero">① 同梱データを取り込む（PSA10買取比較・87件）</button>
             <button type="submit" name="tmf_make_page" class="button button-hero">② 相場検索ページを自動作成</button>
         </form>
         <p class="description">※「同梱データ」は現時点のPSA10相場スナップショットです。以降は下の自動取込で最新化・履歴蓄積できます。</p>

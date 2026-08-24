@@ -28,8 +28,8 @@ $trend_class = function ($t) {
       <span class="tmf-eyebrow" style="display:inline-flex">Market Price Search</span>
       <h1 class="tmf-page__title">ポケカ <span class="g">相場検索</span></h1>
       <p class="tmf-lead" style="margin:16px auto 0">
-        カード名・品番で検索して、<strong>PSA10の相場・最安値</strong>と
-        <strong>予想相場（<?php echo esc_html($horizon); ?>日先）</strong>をチェック。
+        カード名・品番で検索して、<strong>PSA10の各社買取（買取表・スニダン・BIG・BANK・シンソク・BIG予想値・底値）</strong>と
+        <strong>予想相場（<?php echo esc_html($horizon); ?>日先）</strong>を横断チェック。
         毎日データを蓄積し、価格の推移と今後の値動きを可視化します。
       </p>
       <?php if ($updated) : ?>
@@ -84,8 +84,16 @@ $trend_class = function ($t) {
           <thead>
             <tr>
               <th class="col-card">カード</th>
-              <th class="col-kaitori">PSA10 相場</th>
-              <th>PSA10 最安</th>
+              <th class="col-kaitori">買取表</th>
+              <th>スニダン</th>
+              <th>BIG</th>
+              <th>BANK</th>
+              <th>シンソク</th>
+              <th>利率</th>
+              <th>BIG予想値</th>
+              <th>底値</th>
+              <th>最底値<br><small>傷あり</small></th>
+              <th>利益率</th>
               <th class="col-trend">傾向 / 7日</th>
               <th class="col-chart">推移</th>
               <th class="col-fc">予想相場<br><small><?php echo esc_html($horizon); ?>日先</small></th>
@@ -96,11 +104,13 @@ $trend_class = function ($t) {
               $tc = $trend_class($c->trend);
               $fc_dir = $c->forecast_dir ?: 'flat';
               $search = mb_strtolower($c->name . ' ' . $c->code);
+              $profit_num = (float) preg_replace('/[^0-9.\-]/', '', (string)$c->profit);
+              $sort_price = (int)$c->kaitori ?: (int)$c->snidan ?: (int)$c->price;
             ?>
             <tr class="tmf-souba__row"
                 data-name="<?php echo esc_attr($search); ?>"
                 data-trend="<?php echo esc_attr($tc); ?>"
-                data-price="<?php echo esc_attr((int)$c->price); ?>"
+                data-price="<?php echo esc_attr($sort_price); ?>"
                 data-fc="<?php echo esc_attr((float)$c->forecast_pct); ?>"
                 data-sort-name="<?php echo esc_attr(mb_strtolower($c->name)); ?>"
                 data-code="<?php echo esc_attr($c->code); ?>"
@@ -118,8 +128,16 @@ $trend_class = function ($t) {
                   </div>
                 </div>
               </td>
-              <td class="col-kaitori"><span class="tmf-souba__price"><?php echo esc_html($yen($c->price)); ?></span></td>
-              <td class="num"><?php echo esc_html($yen($c->psa_min)); ?></td>
+              <td class="col-kaitori"><span class="tmf-souba__price"><?php echo esc_html($yen($c->kaitori)); ?></span></td>
+              <td class="num"><?php echo esc_html($yen($c->snidan)); ?></td>
+              <td class="num"><?php echo esc_html($yen($c->big)); ?></td>
+              <td class="num"><?php echo esc_html($yen($c->bank)); ?></td>
+              <td class="num"><?php echo esc_html($yen($c->sinsoku)); ?></td>
+              <td class="num muted"><?php echo esc_html($c->rate ?: '—'); ?></td>
+              <td class="num"><?php echo esc_html($yen($c->big_pred)); ?></td>
+              <td class="num"><?php echo esc_html($yen($c->teine)); ?></td>
+              <td class="num"><?php echo esc_html($yen($c->teine_kizu)); ?></td>
+              <td class="num <?php echo $profit_num >= 0 ? 'pos' : 'neg'; ?>"><?php echo esc_html($c->profit ?: '—'); ?></td>
               <td class="col-trend">
                 <span class="tmf-badge tmf-badge--<?php echo esc_attr($tc); ?>"><?php echo esc_html($c->trend ?: '—'); ?></span>
                 <?php if ($c->d7 != 0) : ?><span class="tmf-souba__delta <?php echo $c->d7 >= 0 ? 'up' : 'down'; ?>"><?php echo ($c->d7 >= 0 ? '+' : '') . esc_html($c->d7); ?>%</span><?php endif; ?>
@@ -128,10 +146,10 @@ $trend_class = function ($t) {
                 <?php if ($c->series) : ?><canvas class="tmf-spark" width="120" height="40" aria-hidden="true"></canvas><?php else : ?><span class="muted">—</span><?php endif; ?>
               </td>
               <td class="col-fc">
-                <?php if ((int)$c->forecast > 0 && $c->series) : ?>
+                <?php if ((int)$c->forecast > 0) : ?>
                   <span class="tmf-souba__fc tmf-souba__fc--<?php echo esc_attr($fc_dir); ?>"><?php echo esc_html($yen($c->forecast)); ?></span>
                   <span class="tmf-souba__fcpct tmf-souba__fc--<?php echo esc_attr($fc_dir); ?>"><?php echo $fc_dir === 'up' ? '▲' : ($fc_dir === 'down' ? '▼' : '→'); ?> <?php echo ($c->forecast_pct >= 0 ? '+' : '') . esc_html($c->forecast_pct); ?>%</span>
-                <?php else : ?><span class="muted">データ蓄積中</span><?php endif; ?>
+                <?php else : ?><span class="muted">蓄積中</span><?php endif; ?>
               </td>
             </tr>
             <?php endforeach; ?>
