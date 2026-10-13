@@ -1,9 +1,7 @@
 name: Deploy Sehure Theme to ConoHa WING
 
 on:
-  push:
-    branches: [ main ]
-  workflow_dispatch:
+   workflow_dispatch:
 
 jobs:
   deploy:
